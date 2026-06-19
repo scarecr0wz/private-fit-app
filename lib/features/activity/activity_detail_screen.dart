@@ -6,6 +6,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../theme.dart';
 import '../../data/database.dart';
 import 'activity_icons.dart';
+import 'flyover_3d_screen.dart';
 
 // ─── Data model untuk checkpoint pace ────────────────────────────────────────
 
@@ -191,6 +192,29 @@ class ActivityDetailScreen extends StatelessWidget {
                         ),
                     ],
                   ),
+                  // Tombol 3D Flyover
+                  if (routePoints.isNotEmpty)
+                    Positioned(
+                      bottom: 16,
+                      right: 16,
+                      child: FloatingActionButton.extended(
+                        heroTag: 'flyover_btn',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => Flyover3DScreen(activity: activity),
+                            ),
+                          );
+                        },
+                        backgroundColor: AppColors.primary,
+                        icon: const Icon(Icons.threed_rotation, color: Colors.white),
+                        label: const Text(
+                          '3D Flyover',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
                   // Pace Legend overlay
                   Positioned(
                     right: 12,

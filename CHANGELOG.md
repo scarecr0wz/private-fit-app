@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.7.0] - 2026-06-19
+
+### Added
+- **Activity Detail Screen**: Added "3D Flyover" feature utilizing MapLibre GL and MapTiler's 3D Terrain data.
+- **Activity Detail Screen**: Users can now watch an automated cinematic 3D camera flyover animation tracing their exact activity route from start to finish.
+
 ## [1.6.0] - 2026-06-19
 
 ### Added
