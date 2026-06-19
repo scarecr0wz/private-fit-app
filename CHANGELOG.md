@@ -1,4 +1,33 @@
-y# Changelog
+# Changelog
+
+## [1.3.0] - 2026-06-19
+
+### Added
+- **Activity Service**: Singleton state management for outdoor run tracking
+  - State persists across tab navigation (idle/running/paused)
+  - Per-segment pace calculation with minimum distance threshold
+  - Route points stored with timestamps for accurate pace data
+- **Activity Screen**: LIVE indicator badge and My Location button
+  - Green pulsing badge shows active tracking state
+  - My Location button re-centers map to current position
+  - Tile error fallback handler for offline resilience
+- **Activity Detail Screen**: Colored polylines by pace
+  - Green (fast ≤4 min/km) → Yellow (medium) → Red (slow ≥8 min/km)
+  - Distinct Start (green) and Finish (red) markers
+  - Pace legend overlay with gradient bar
+- **Food Screen**: Nutrition pie chart with macro breakdown
+  - Interactive pie chart showing Protein/Carbs/Fat distribution
+  - Touch feedback with percentage display
+  - Legend with gram values and percentages
+
+### Changed
+- Refactored `activity_screen.dart` to use `ActivityService` instead of local state
+- Added `fl_chart` dependency for pie chart visualization
+- Route points JSON now includes per-segment pace data
+
+### Fixed
+- Activity state no longer resets when switching between tabs
+- Pace calculation uses minimum distance threshold (50m) to avoid initial bugs
 
 ## [1.2.0] - 2026-06-19
 

@@ -1,5 +1,3 @@
-import 'dart:async';
-import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -7,9 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../theme.dart';
-import '../../data/database.dart';
-
-enum ActivityState { idle, running, paused }
+import 'activity_service.dart';
 
 class ActivityScreen extends StatefulWidget {
   const ActivityScreen({super.key});
@@ -19,60 +15,36 @@ class ActivityScreen extends StatefulWidget {
 }
 
 class _ActivityScreenState extends State<ActivityScreen> {
-  ActivityState _state = ActivityState.idle;
-  Timer? _timer;
-  StreamSubscription<Position>? _positionStreamSubscription;
-
-  Duration _duration = Duration.zero;
-  double _distanceKm = 0.0;
-  int _calories = 0;
-  String _pace = "0'00\"";
-
-  final List<LatLng> _routePoints = [];
-  LatLng _currentLocation = const LatLng(-6.200000, 106.816666);
+  final _svc = ActivityService.instance;
   final MapController _mapController = MapController();
 
   @override
   void initState() {
     super.initState();
-    _initLocation();
-  }
-
-  Future<void> _initLocation() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return;
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return;
-    }
-
-    if (permission == LocationPermission.deniedForever) return;
-
-    try {
-      Position position = await Geolocator.getCurrentPosition();
-      setState(() {
-        _currentLocation = LatLng(position.latitude, position.longitude);
-        _mapController.move(_currentLocation, 16.0);
-      });
-    } catch (e) {
-      // ignore
-    }
+    _svc.addListener(_onServiceChanged);
+    _initMap();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
-    _positionStreamSubscription?.cancel();
+    _svc.removeListener(_onServiceChanged);
     _mapController.dispose();
     super.dispose();
   }
 
-  Future<void> _startActivity() async {
+  void _onServiceChanged() {
+    if (!mounted) return;
+    setState(() {});
+    // Ikuti lokasi terbaru di peta saat tracking
+    if (_svc.routePoints.isNotEmpty) {
+      _mapController.move(_svc.routePoints.last, _mapController.camera.zoom);
+    }
+  }
+
+  Future<void> _initMap() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return;
+
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -80,111 +52,21 @@ class _ActivityScreenState extends State<ActivityScreen> {
     }
     if (permission == LocationPermission.deniedForever) return;
 
-    setState(() {
-      _state = ActivityState.running;
-      if (_routePoints.isEmpty) {
-        _routePoints.add(_currentLocation);
+    try {
+      final pos = await Geolocator.getCurrentPosition();
+      if (mounted) {
+        _mapController.move(LatLng(pos.latitude, pos.longitude), 16.0);
       }
-    });
-
-    _startTimerAndStream();
-  }
-
-  void _startTimerAndStream() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        _duration += const Duration(seconds: 1);
-        if (_distanceKm > 0) {
-          final minutes = _duration.inSeconds / 60.0;
-          final paceValue = minutes / _distanceKm;
-          final paceMinutes = paceValue.floor();
-          final paceSeconds = ((paceValue - paceMinutes) * 60).floor();
-          _pace = "$paceMinutes'${paceSeconds.toString().padLeft(2, '0')}\"";
-        }
-      });
-    });
-
-    _positionStreamSubscription ??= Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 2,
-      ),
-    ).listen((Position position) {
-      if (_state == ActivityState.running) {
-        setState(() {
-          final newLocation = LatLng(position.latitude, position.longitude);
-
-          if (_routePoints.isNotEmpty) {
-            final lastPoint = _routePoints.last;
-            final distanceMeters = Geolocator.distanceBetween(
-              lastPoint.latitude,
-              lastPoint.longitude,
-              newLocation.latitude,
-              newLocation.longitude,
-            );
-            _distanceKm += distanceMeters / 1000.0;
-            _calories = (_distanceKm * 60).round();
-          }
-
-          _currentLocation = newLocation;
-          _routePoints.add(_currentLocation);
-          _mapController.move(_currentLocation, _mapController.camera.zoom);
-        });
-      }
-    });
-  }
-
-  void _pauseActivity() {
-    setState(() {
-      _state = ActivityState.paused;
-    });
-    _timer?.cancel();
-  }
-
-  void _resumeActivity() {
-    setState(() {
-      _state = ActivityState.running;
-    });
-    _startTimerAndStream();
-  }
-
-  Future<void> _stopActivity() async {
-    if (_routePoints.isNotEmpty) {
-      final routeJson = jsonEncode(
-        _routePoints.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList(),
-      );
-
-      await db.into(db.activityLogs).insert(
-        ActivityLogsCompanion.insert(
-          type: 'run',
-          date: DateTime.now(),
-          durationSeconds: _duration.inSeconds,
-          distanceMeters: _distanceKm * 1000,
-          caloriesBurned: _calories.toDouble(),
-          routePoints: routeJson,
-        ),
-      );
-    }
-
-    setState(() {
-      _state = ActivityState.idle;
-      _duration = Duration.zero;
-      _distanceKm = 0.0;
-      _calories = 0;
-      _pace = "0'00\"";
-      _routePoints.clear();
-    });
-    _timer?.cancel();
-    _positionStreamSubscription?.cancel();
-    _positionStreamSubscription = null;
+    } catch (_) {}
   }
 
   String _formatDuration(Duration d) {
-    String twoDigits(int n) => n.toString().padLeft(2, "0");
-    final String twoDigitMinutes = twoDigits(d.inMinutes.remainder(60));
-    final String twoDigitSeconds = twoDigits(d.inSeconds.remainder(60));
-    return "${twoDigits(d.inHours)}:$twoDigitMinutes:$twoDigitSeconds";
+    String two(int n) => n.toString().padLeft(2, '0');
+    return "${two(d.inHours)}:${two(d.inMinutes.remainder(60))}:${two(d.inSeconds.remainder(60))}";
   }
+
+  LatLng get _mapCenter =>
+      _svc.routePoints.isNotEmpty ? _svc.routePoints.last : const LatLng(-6.200000, 106.816666);
 
   @override
   Widget build(BuildContext context) {
@@ -196,7 +78,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              initialCenter: _currentLocation,
+              initialCenter: _mapCenter,
               initialZoom: 16.0,
             ),
             children: [
@@ -204,42 +86,46 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 urlTemplate: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
                 subdomains: const ['a', 'b', 'c', 'd'],
                 userAgentPackageName: 'com.example.fitapp',
+                // Offline fallback: jika tile gagal dimuat, tidak crash
+                errorTileCallback: (tile, error, stackTrace) {},
               ),
-              if (_routePoints.isNotEmpty)
+              if (_svc.routePoints.length > 1)
                 PolylineLayer(
                   polylines: [
                     Polyline(
-                      points: _routePoints,
+                      points: _svc.routePoints,
                       color: AppColors.secondary,
                       strokeWidth: 4.0,
                     ),
                   ],
                 ),
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: _currentLocation,
-                    width: 24,
-                    height: 24,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.secondary,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.secondary.withValues(alpha: 0.6),
-                            blurRadius: 10,
-                            spreadRadius: 4,
-                          ),
-                        ],
+              if (_svc.routePoints.isNotEmpty)
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: _svc.routePoints.last,
+                      width: 24,
+                      height: 24,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.secondary,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.secondary.withValues(alpha: 0.6),
+                              blurRadius: 10,
+                              spreadRadius: 4,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
             ],
           ),
 
+          // 2. Top Bar
           Positioned(
             top: 0,
             left: 0,
@@ -290,9 +176,46 @@ class _ActivityScreenState extends State<ActivityScreen> {
                   ),
                   Row(
                     children: [
-                      _IconBtn3D(icon: Icons.settings_suggest, onTap: () {}),
-                      const SizedBox(width: 8),
-                      _IconBtn3D(icon: Icons.my_location, onTap: () {}),
+                      // Indikator background running
+                      if (_svc.state == ActivityState.running)
+                        Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.secondary.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(99),
+                            border: Border.all(
+                              color: AppColors.secondary.withValues(alpha: 0.4),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.secondary,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'LIVE',
+                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  color: AppColors.secondary,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      _IconBtn3D(icon: Icons.my_location, onTap: () {
+                        if (_svc.routePoints.isNotEmpty) {
+                          _mapController.move(_svc.routePoints.last, 16.0);
+                        }
+                      }),
                     ],
                   ),
                 ],
@@ -315,28 +238,28 @@ class _ActivityScreenState extends State<ActivityScreen> {
                       Expanded(
                         child: _StatItem(
                           label: 'Duration',
-                          value: _formatDuration(_duration),
+                          value: _formatDuration(_svc.duration),
                         ),
                       ),
                       _buildDivider(),
                       Expanded(
                         child: _StatItem(
                           label: 'Distance',
-                          value: '${_distanceKm.toStringAsFixed(2)} km',
+                          value: '${_svc.distanceKm.toStringAsFixed(2)} km',
                         ),
                       ),
                       _buildDivider(),
                       Expanded(
                         child: _StatItem(
                           label: 'Pace',
-                          value: _pace,
+                          value: _svc.pace,
                         ),
                       ),
                       _buildDivider(),
                       Expanded(
                         child: _StatItem(
                           label: 'Calories',
-                          value: '$_calories kcal',
+                          value: '${_svc.calories} kcal',
                         ),
                       ),
                     ],
@@ -368,12 +291,12 @@ class _ActivityScreenState extends State<ActivityScreen> {
   }
 
   Widget _buildActionControls() {
-    if (_state == ActivityState.idle) {
+    if (_svc.state == ActivityState.idle) {
       return _Btn3DPrimary(
         text: 'MULAI',
         icon: Icons.play_arrow,
         width: 176,
-        onTap: _startActivity,
+        onTap: () => _svc.startActivity(),
       );
     }
 
@@ -381,13 +304,15 @@ class _ActivityScreenState extends State<ActivityScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _CircleBtn3DSecondary(
-          icon: _state == ActivityState.running ? Icons.pause : Icons.play_arrow,
-          onTap: _state == ActivityState.running ? _pauseActivity : _resumeActivity,
+          icon: _svc.state == ActivityState.running ? Icons.pause : Icons.play_arrow,
+          onTap: _svc.state == ActivityState.running
+              ? () => _svc.pauseActivity()
+              : () => _svc.resumeActivity(),
         ),
         const SizedBox(width: 32),
         _CircleBtn3DError(
           icon: Icons.stop,
-          onTap: _stopActivity,
+          onTap: () => _svc.stopActivity(),
         ),
         const SizedBox(width: 32),
         _CircleBtn3DSecondary(

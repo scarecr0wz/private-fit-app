@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:dio/dio.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../theme.dart';
 import '../../data/database.dart';
 import 'food_dummy.dart';
@@ -430,18 +431,39 @@ class _FoodScreenState extends State<FoodScreen> {
           );
         }
 
+        // Hitung total makro dari semua log hari ini
+        double totalCalories = 0;
+        double totalProtein = 0;
+        double totalCarbs = 0;
+        double totalFat = 0;
+        for (final log in logs) {
+          totalCalories += log.calories;
+          totalProtein += log.protein;
+          totalCarbs += log.carbs;
+          totalFat += log.fat;
+        }
+
         return ListView.separated(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
-          itemCount: logs.length + 1,
+          itemCount: logs.length + 2,
           separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (_, i) {
             if (i == 0) {
+              // Pie chart card
+              return _NutritionPieChart(
+                totalCalories: totalCalories,
+                totalProtein: totalProtein,
+                totalCarbs: totalCarbs,
+                totalFat: totalFat,
+              );
+            }
+            if (i == 1) {
               return Padding(
-                padding: const EdgeInsets.only(bottom: 8.0, left: 4),
+                padding: const EdgeInsets.only(bottom: 4.0, left: 4),
                 child: Text('What You Ate Today', style: Theme.of(context).textTheme.titleMedium),
               );
             }
-            final log = logs[i - 1];
+            final log = logs[i - 2];
             return _GlassCard(
               child: Row(
                 children: [
@@ -545,6 +567,223 @@ class _GlassCard extends StatelessWidget {
         ],
       ),
       child: child,
+    );
+  }
+}
+
+// ── Nutrition Pie Chart ───────────────────────────────────────────────────────
+
+class _NutritionPieChart extends StatefulWidget {
+  final double totalCalories;
+  final double totalProtein;
+  final double totalCarbs;
+  final double totalFat;
+
+  const _NutritionPieChart({
+    required this.totalCalories,
+    required this.totalProtein,
+    required this.totalCarbs,
+    required this.totalFat,
+  });
+
+  @override
+  State<_NutritionPieChart> createState() => _NutritionPieChartState();
+}
+
+class _NutritionPieChartState extends State<_NutritionPieChart> {
+  int _touchedIndex = -1;
+
+  static const _proteinColor  = Color(0xFF5EFBD6); // teal/secondary
+  static const _carbsColor    = Color(0xFFC4C0FF); // lavender/primary
+  static const _fatColor      = Color(0xFFFFB4AB); // coral/error-light
+
+  @override
+  Widget build(BuildContext context) {
+    final total = widget.totalProtein + widget.totalCarbs + widget.totalFat;
+    final hasData = total > 0;
+
+    return _GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              const Icon(Icons.pie_chart_rounded, color: AppColors.secondary, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                'Nutrition Today',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.onSurface,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.secondary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(99),
+                  border: Border.all(color: AppColors.secondary.withValues(alpha: 0.3), width: 1),
+                ),
+                child: Text(
+                  '${widget.totalCalories.toInt()} kcal',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: AppColors.secondary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Chart + Legend
+          Row(
+            children: [
+              // Pie Chart
+              SizedBox(
+                width: 140,
+                height: 140,
+                child: hasData
+                    ? PieChart(
+                        PieChartData(
+                          pieTouchData: PieTouchData(
+                            touchCallback: (event, response) {
+                              setState(() {
+                                if (!event.isInterestedForInteractions ||
+                                    response == null ||
+                                    response.touchedSection == null) {
+                                  _touchedIndex = -1;
+                                  return;
+                                }
+                                _touchedIndex = response.touchedSection!.touchedSectionIndex;
+                              });
+                            },
+                          ),
+                          borderData: FlBorderData(show: false),
+                          sectionsSpace: 3,
+                          centerSpaceRadius: 36,
+                          sections: [
+                            _buildSection(0, 'P', widget.totalProtein, total, _proteinColor),
+                            _buildSection(1, 'C', widget.totalCarbs, total, _carbsColor),
+                            _buildSection(2, 'F', widget.totalFat, total, _fatColor),
+                          ],
+                        ),
+                      )
+                    : Center(
+                        child: Text(
+                          'No data',
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+              ),
+              const SizedBox(width: 20),
+
+              // Legend
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _LegendItem(
+                      color: _proteinColor,
+                      label: 'Protein',
+                      value: '${widget.totalProtein.toStringAsFixed(1)} g',
+                      percent: hasData ? (widget.totalProtein / total * 100).round() : 0,
+                    ),
+                    const SizedBox(height: 10),
+                    _LegendItem(
+                      color: _carbsColor,
+                      label: 'Karbo',
+                      value: '${widget.totalCarbs.toStringAsFixed(1)} g',
+                      percent: hasData ? (widget.totalCarbs / total * 100).round() : 0,
+                    ),
+                    const SizedBox(height: 10),
+                    _LegendItem(
+                      color: _fatColor,
+                      label: 'Lemak',
+                      value: '${widget.totalFat.toStringAsFixed(1)} g',
+                      percent: hasData ? (widget.totalFat / total * 100).round() : 0,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  PieChartSectionData _buildSection(
+      int index, String title, double value, double total, Color color) {
+    final isTouched = index == _touchedIndex;
+    final pct = total > 0 ? value / total * 100 : 0.0;
+    return PieChartSectionData(
+      color: color,
+      value: value > 0 ? value : 0.001,
+      title: isTouched ? '${pct.round()}%' : '',
+      radius: isTouched ? 40 : 32,
+      titleStyle: const TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+        shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
+      ),
+    );
+  }
+}
+
+class _LegendItem extends StatelessWidget {
+  final Color color;
+  final String label;
+  final String value;
+  final int percent;
+
+  const _LegendItem({
+    required this.color,
+    required this.label,
+    required this.value,
+    required this.percent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+        ),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: AppColors.onSurface,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          '$percent%',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: color,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
     );
   }
 }
