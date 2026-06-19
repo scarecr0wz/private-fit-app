@@ -24,6 +24,15 @@ y# Changelog
   - Recent meals and activities from DB
 - **Stats Screen**: Activity history from database instead of dummy data
 
+### Fixed
+- **Dashboard**: Fixed StreamBuilder nesting issues and syntax errors.
+- **Dashboard**: Merged `WorkoutLogs` stream to accurately calculate total calories burned from gym sessions.
+- **Activity Screen**: Standardized activity type logic (`run` instead of `Outdoor Run`) to match history UI icons.
+- **Stats Screen**: Cleaned up leftover dummy code (`_DummyHistoryItem`, `_buildHistoryCards`).
+- **Stats Screen**: Added `WorkoutLogs` to history list to correctly display Gym sessions alongside Cardio.
+- **Database**: Added `caloriesBurned` column to `WorkoutLogs` for accurate dashboard calculations.
+- **Tests**: Updated `widget_test.dart` to use `FitApp` instead of `MyApp`.
+
 ### Changed
 - Added `drift`, `dio`, `mobile_scanner`, `path`, `path_provider` dependencies
 - Added `drift_dev`, `build_runner` dev dependencies for code generation

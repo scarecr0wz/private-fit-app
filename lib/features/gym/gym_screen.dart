@@ -90,6 +90,7 @@ class _GymScreenState extends State<GymScreen> {
         templateName: 'Push Day',
         durationMinutes: durationMinutes,
         totalVolumeKg: totalVolume,
+        caloriesBurned: drift.Value(durationMinutes * 5.0),
       ));
       
       for (var s in setsToInsert) {

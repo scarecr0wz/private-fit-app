@@ -549,6 +549,18 @@ class $WorkoutLogsTable extends WorkoutLogs
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _caloriesBurnedMeta = const VerificationMeta(
+    'caloriesBurned',
+  );
+  @override
+  late final GeneratedColumn<double> caloriesBurned = GeneratedColumn<double>(
+    'calories_burned',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -556,6 +568,7 @@ class $WorkoutLogsTable extends WorkoutLogs
     templateName,
     durationMinutes,
     totalVolumeKg,
+    caloriesBurned,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -613,6 +626,15 @@ class $WorkoutLogsTable extends WorkoutLogs
     } else if (isInserting) {
       context.missing(_totalVolumeKgMeta);
     }
+    if (data.containsKey('calories_burned')) {
+      context.handle(
+        _caloriesBurnedMeta,
+        caloriesBurned.isAcceptableOrUnknown(
+          data['calories_burned']!,
+          _caloriesBurnedMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -642,6 +664,10 @@ class $WorkoutLogsTable extends WorkoutLogs
         DriftSqlType.double,
         data['${effectivePrefix}total_volume_kg'],
       )!,
+      caloriesBurned: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}calories_burned'],
+      )!,
     );
   }
 
@@ -657,12 +683,14 @@ class WorkoutLog extends DataClass implements Insertable<WorkoutLog> {
   final String templateName;
   final int durationMinutes;
   final double totalVolumeKg;
+  final double caloriesBurned;
   const WorkoutLog({
     required this.id,
     required this.date,
     required this.templateName,
     required this.durationMinutes,
     required this.totalVolumeKg,
+    required this.caloriesBurned,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -672,6 +700,7 @@ class WorkoutLog extends DataClass implements Insertable<WorkoutLog> {
     map['template_name'] = Variable<String>(templateName);
     map['duration_minutes'] = Variable<int>(durationMinutes);
     map['total_volume_kg'] = Variable<double>(totalVolumeKg);
+    map['calories_burned'] = Variable<double>(caloriesBurned);
     return map;
   }
 
@@ -682,6 +711,7 @@ class WorkoutLog extends DataClass implements Insertable<WorkoutLog> {
       templateName: Value(templateName),
       durationMinutes: Value(durationMinutes),
       totalVolumeKg: Value(totalVolumeKg),
+      caloriesBurned: Value(caloriesBurned),
     );
   }
 
@@ -696,6 +726,7 @@ class WorkoutLog extends DataClass implements Insertable<WorkoutLog> {
       templateName: serializer.fromJson<String>(json['templateName']),
       durationMinutes: serializer.fromJson<int>(json['durationMinutes']),
       totalVolumeKg: serializer.fromJson<double>(json['totalVolumeKg']),
+      caloriesBurned: serializer.fromJson<double>(json['caloriesBurned']),
     );
   }
   @override
@@ -707,6 +738,7 @@ class WorkoutLog extends DataClass implements Insertable<WorkoutLog> {
       'templateName': serializer.toJson<String>(templateName),
       'durationMinutes': serializer.toJson<int>(durationMinutes),
       'totalVolumeKg': serializer.toJson<double>(totalVolumeKg),
+      'caloriesBurned': serializer.toJson<double>(caloriesBurned),
     };
   }
 
@@ -716,12 +748,14 @@ class WorkoutLog extends DataClass implements Insertable<WorkoutLog> {
     String? templateName,
     int? durationMinutes,
     double? totalVolumeKg,
+    double? caloriesBurned,
   }) => WorkoutLog(
     id: id ?? this.id,
     date: date ?? this.date,
     templateName: templateName ?? this.templateName,
     durationMinutes: durationMinutes ?? this.durationMinutes,
     totalVolumeKg: totalVolumeKg ?? this.totalVolumeKg,
+    caloriesBurned: caloriesBurned ?? this.caloriesBurned,
   );
   WorkoutLog copyWithCompanion(WorkoutLogsCompanion data) {
     return WorkoutLog(
@@ -736,6 +770,9 @@ class WorkoutLog extends DataClass implements Insertable<WorkoutLog> {
       totalVolumeKg: data.totalVolumeKg.present
           ? data.totalVolumeKg.value
           : this.totalVolumeKg,
+      caloriesBurned: data.caloriesBurned.present
+          ? data.caloriesBurned.value
+          : this.caloriesBurned,
     );
   }
 
@@ -746,14 +783,21 @@ class WorkoutLog extends DataClass implements Insertable<WorkoutLog> {
           ..write('date: $date, ')
           ..write('templateName: $templateName, ')
           ..write('durationMinutes: $durationMinutes, ')
-          ..write('totalVolumeKg: $totalVolumeKg')
+          ..write('totalVolumeKg: $totalVolumeKg, ')
+          ..write('caloriesBurned: $caloriesBurned')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, date, templateName, durationMinutes, totalVolumeKg);
+  int get hashCode => Object.hash(
+    id,
+    date,
+    templateName,
+    durationMinutes,
+    totalVolumeKg,
+    caloriesBurned,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -762,7 +806,8 @@ class WorkoutLog extends DataClass implements Insertable<WorkoutLog> {
           other.date == this.date &&
           other.templateName == this.templateName &&
           other.durationMinutes == this.durationMinutes &&
-          other.totalVolumeKg == this.totalVolumeKg);
+          other.totalVolumeKg == this.totalVolumeKg &&
+          other.caloriesBurned == this.caloriesBurned);
 }
 
 class WorkoutLogsCompanion extends UpdateCompanion<WorkoutLog> {
@@ -771,12 +816,14 @@ class WorkoutLogsCompanion extends UpdateCompanion<WorkoutLog> {
   final Value<String> templateName;
   final Value<int> durationMinutes;
   final Value<double> totalVolumeKg;
+  final Value<double> caloriesBurned;
   const WorkoutLogsCompanion({
     this.id = const Value.absent(),
     this.date = const Value.absent(),
     this.templateName = const Value.absent(),
     this.durationMinutes = const Value.absent(),
     this.totalVolumeKg = const Value.absent(),
+    this.caloriesBurned = const Value.absent(),
   });
   WorkoutLogsCompanion.insert({
     this.id = const Value.absent(),
@@ -784,6 +831,7 @@ class WorkoutLogsCompanion extends UpdateCompanion<WorkoutLog> {
     required String templateName,
     required int durationMinutes,
     required double totalVolumeKg,
+    this.caloriesBurned = const Value.absent(),
   }) : date = Value(date),
        templateName = Value(templateName),
        durationMinutes = Value(durationMinutes),
@@ -794,6 +842,7 @@ class WorkoutLogsCompanion extends UpdateCompanion<WorkoutLog> {
     Expression<String>? templateName,
     Expression<int>? durationMinutes,
     Expression<double>? totalVolumeKg,
+    Expression<double>? caloriesBurned,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -801,6 +850,7 @@ class WorkoutLogsCompanion extends UpdateCompanion<WorkoutLog> {
       if (templateName != null) 'template_name': templateName,
       if (durationMinutes != null) 'duration_minutes': durationMinutes,
       if (totalVolumeKg != null) 'total_volume_kg': totalVolumeKg,
+      if (caloriesBurned != null) 'calories_burned': caloriesBurned,
     });
   }
 
@@ -810,6 +860,7 @@ class WorkoutLogsCompanion extends UpdateCompanion<WorkoutLog> {
     Value<String>? templateName,
     Value<int>? durationMinutes,
     Value<double>? totalVolumeKg,
+    Value<double>? caloriesBurned,
   }) {
     return WorkoutLogsCompanion(
       id: id ?? this.id,
@@ -817,6 +868,7 @@ class WorkoutLogsCompanion extends UpdateCompanion<WorkoutLog> {
       templateName: templateName ?? this.templateName,
       durationMinutes: durationMinutes ?? this.durationMinutes,
       totalVolumeKg: totalVolumeKg ?? this.totalVolumeKg,
+      caloriesBurned: caloriesBurned ?? this.caloriesBurned,
     );
   }
 
@@ -838,6 +890,9 @@ class WorkoutLogsCompanion extends UpdateCompanion<WorkoutLog> {
     if (totalVolumeKg.present) {
       map['total_volume_kg'] = Variable<double>(totalVolumeKg.value);
     }
+    if (caloriesBurned.present) {
+      map['calories_burned'] = Variable<double>(caloriesBurned.value);
+    }
     return map;
   }
 
@@ -848,7 +903,8 @@ class WorkoutLogsCompanion extends UpdateCompanion<WorkoutLog> {
           ..write('date: $date, ')
           ..write('templateName: $templateName, ')
           ..write('durationMinutes: $durationMinutes, ')
-          ..write('totalVolumeKg: $totalVolumeKg')
+          ..write('totalVolumeKg: $totalVolumeKg, ')
+          ..write('caloriesBurned: $caloriesBurned')
           ..write(')'))
         .toString();
   }
@@ -2207,6 +2263,7 @@ typedef $$WorkoutLogsTableCreateCompanionBuilder =
       required String templateName,
       required int durationMinutes,
       required double totalVolumeKg,
+      Value<double> caloriesBurned,
     });
 typedef $$WorkoutLogsTableUpdateCompanionBuilder =
     WorkoutLogsCompanion Function({
@@ -2215,6 +2272,7 @@ typedef $$WorkoutLogsTableUpdateCompanionBuilder =
       Value<String> templateName,
       Value<int> durationMinutes,
       Value<double> totalVolumeKg,
+      Value<double> caloriesBurned,
     });
 
 class $$WorkoutLogsTableFilterComposer
@@ -2248,6 +2306,11 @@ class $$WorkoutLogsTableFilterComposer
 
   ColumnFilters<double> get totalVolumeKg => $composableBuilder(
     column: $table.totalVolumeKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get caloriesBurned => $composableBuilder(
+    column: $table.caloriesBurned,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -2285,6 +2348,11 @@ class $$WorkoutLogsTableOrderingComposer
     column: $table.totalVolumeKg,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get caloriesBurned => $composableBuilder(
+    column: $table.caloriesBurned,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$WorkoutLogsTableAnnotationComposer
@@ -2314,6 +2382,11 @@ class $$WorkoutLogsTableAnnotationComposer
 
   GeneratedColumn<double> get totalVolumeKg => $composableBuilder(
     column: $table.totalVolumeKg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get caloriesBurned => $composableBuilder(
+    column: $table.caloriesBurned,
     builder: (column) => column,
   );
 }
@@ -2354,12 +2427,14 @@ class $$WorkoutLogsTableTableManager
                 Value<String> templateName = const Value.absent(),
                 Value<int> durationMinutes = const Value.absent(),
                 Value<double> totalVolumeKg = const Value.absent(),
+                Value<double> caloriesBurned = const Value.absent(),
               }) => WorkoutLogsCompanion(
                 id: id,
                 date: date,
                 templateName: templateName,
                 durationMinutes: durationMinutes,
                 totalVolumeKg: totalVolumeKg,
+                caloriesBurned: caloriesBurned,
               ),
           createCompanionCallback:
               ({
@@ -2368,12 +2443,14 @@ class $$WorkoutLogsTableTableManager
                 required String templateName,
                 required int durationMinutes,
                 required double totalVolumeKg,
+                Value<double> caloriesBurned = const Value.absent(),
               }) => WorkoutLogsCompanion.insert(
                 id: id,
                 date: date,
                 templateName: templateName,
                 durationMinutes: durationMinutes,
                 totalVolumeKg: totalVolumeKg,
+                caloriesBurned: caloriesBurned,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

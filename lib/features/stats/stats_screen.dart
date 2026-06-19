@@ -5,19 +5,6 @@ import '../../data/database.dart';
 
 import '../../theme.dart';
 
-class _DummyHistoryItem {
-  final String label;
-  final String detail;
-  final int calories;
-  final String type;
-
-  _DummyHistoryItem({
-    required this.label,
-    required this.detail,
-    required this.calories,
-    required this.type,
-  });
-}
 
 class StatsScreen extends StatefulWidget {
   const StatsScreen({super.key});
@@ -154,27 +141,60 @@ class _StatsScreenState extends State<StatsScreen> {
                       const SizedBox(height: 16),
                       StreamBuilder<List<ActivityLog>>(
                         stream: db.select(db.activityLogs).watch(),
-                        builder: (context, snapshot) {
-                          final activities = snapshot.data ?? [];
-                          if (activities.isEmpty) {
-                            return const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(20.0),
-                                child: Text('Belum ada aktivitas', style: TextStyle(color: Colors.white54)),
-                              ),
-                            );
-                          }
-                          return Column(
-                            children: activities.map((a) {
-                              String label = 'Aktivitas';
-                              if (a.type == 'run') label = 'Lari';
-                              if (a.type == 'bike') label = 'Bersepeda';
-                              if (a.type == 'gym') label = 'Latihan Beban';
-
-                              String detail = '${a.durationSeconds ~/ 60} min';
-                              if (a.distanceMeters > 0) {
-                                detail = '${(a.distanceMeters / 1000).toStringAsFixed(1)} km - $detail';
+                        builder: (context, activitySnapshot) {
+                          return StreamBuilder<List<WorkoutLog>>(
+                            stream: db.select(db.workoutLogs).watch(),
+                            builder: (context, workoutSnapshot) {
+                              final activities = activitySnapshot.data ?? [];
+                              final workouts = workoutSnapshot.data ?? [];
+                              
+                              if (activities.isEmpty && workouts.isEmpty) {
+                                return const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(20.0),
+                                    child: Text('Belum ada aktivitas', style: TextStyle(color: Colors.white54)),
+                                  ),
+                                );
                               }
+
+                              final List<Map<String, dynamic>> combined = [];
+                              
+                              for (final a in activities) {
+                                String label = 'Aktivitas';
+                                if (a.type == 'run') label = 'Lari';
+                                if (a.type == 'bike') label = 'Bersepeda';
+                                
+                                String detail = '${a.durationSeconds ~/ 60} min';
+                                if (a.distanceMeters > 0) {
+                                  detail = '${(a.distanceMeters / 1000).toStringAsFixed(1)} km - $detail';
+                                }
+                                
+                                combined.add({
+                                  'label': label,
+                                  'detail': detail,
+                                  'type': a.type,
+                                  'calories': a.caloriesBurned.toInt(),
+                                  'date': a.date,
+                                });
+                              }
+                              
+                              for (final w in workouts) {
+                                combined.add({
+                                  'label': w.templateName,
+                                  'detail': '${w.durationMinutes} min • ${w.totalVolumeKg.toInt()} kg',
+                                  'type': 'gym',
+                                  'calories': w.caloriesBurned.toInt(),
+                                  'date': w.date,
+                                });
+                              }
+                              
+                              combined.sort((a, b) => (b['date'] as DateTime).compareTo(a['date'] as DateTime));
+
+                              return Column(
+                                children: combined.map((a) {
+                                  String type = a['type'];
+                                  String label = a['label'];
+                                  String detail = a['detail'];
 
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 12.0),
@@ -190,7 +210,7 @@ class _StatsScreenState extends State<StatsScreen> {
                                           border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                                         ),
                                         child: Icon(
-                                          a.type == 'run' ? Icons.directions_run : (a.type == 'bike' ? Icons.directions_bike : Icons.fitness_center),
+                                          type == 'run' ? Icons.directions_run : (type == 'bike' ? Icons.directions_bike : Icons.fitness_center),
                                           color: AppColors.secondary,
                                         ),
                                       ),
@@ -219,7 +239,7 @@ class _StatsScreenState extends State<StatsScreen> {
                                         crossAxisAlignment: CrossAxisAlignment.end,
                                         children: [
                                           Text(
-                                            '${a.caloriesBurned.toInt()}',
+                                            '${a['calories']}',
                                             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                                   color: AppColors.secondary,
                                                   fontWeight: FontWeight.bold,
@@ -238,6 +258,8 @@ class _StatsScreenState extends State<StatsScreen> {
                                 ),
                               );
                             }).toList(),
+                          );
+                            },
                           );
                         },
                       ),
@@ -489,75 +511,7 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
-  List<Widget> _buildHistoryCards(BuildContext context) {
-    return _dummyHistory.map((item) {
-      IconData icon;
-      Color iconColor;
-      if (item.type == 'run') {
-        icon = Icons.directions_run;
-        iconColor = AppColors.secondary;
-      } else if (item.type == 'bike') {
-        icon = Icons.directions_bike;
-        iconColor = AppColors.secondary;
-      } else {
-        icon = Icons.fitness_center;
-        iconColor = AppColors.tertiary;
-      }
 
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: _GlassCard(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: iconColor.withValues(alpha: 0.2),
-                    width: 1,
-                  ),
-                ),
-                child: Icon(icon, color: iconColor, size: 22),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.label,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: AppColors.onSurface,
-                            fontWeight: FontWeight.w700,
-                          ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      item.detail,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                '${item.calories} kcal',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: iconColor,
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }).toList();
-  }
 }
 
 class _GlassCard extends StatelessWidget {

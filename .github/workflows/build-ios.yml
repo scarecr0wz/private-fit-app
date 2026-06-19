@@ -1,0 +1,94 @@
+name: Build iOS
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.41.8'
+        channel: 'stable'
+
+    - name: Install dependencies
+      run: flutter pub get
+
+    - name: Run build_runner
+      run: dart run build_runner build --delete-conflicting-outputs
+
+    - name: Set up CocoaPods
+      run: |
+        export LANG=en_US.UTF-8
+        export LC_ALL=en_US.UTF-8
+        sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*/IPHONEOS_DEPLOYMENT_TARGET = 15.0/g' ios/Runner.xcodeproj/project.pbxproj
+
+        if [ ! -f ios/Podfile ]; then
+          cd ios && flutter pub get && cd ..
+        fi
+
+        python3 - << 'PYEOF'
+        import re, pathlib
+        podfile_path = pathlib.Path("ios/Podfile")
+        podfile = podfile_path.read_text() if podfile_path.exists() else ""
+
+        if not re.search(r"^platform :ios", podfile, re.MULTILINE):
+            podfile = "platform :ios, '15.0'\n" + podfile
+        else:
+            podfile = re.sub(r"^platform :ios, '[0-9.]*'", "platform :ios, '15.0'", podfile, flags=re.MULTILINE)
+
+        podfile = re.sub(r'post_install do \|installer\|.*?^end\n', '', podfile, flags=re.DOTALL | re.MULTILINE)
+        podfile += """
+        post_install do |installer|
+          installer.pods_project.targets.each do |target|
+            flutter_additional_ios_build_settings(target)
+            target.build_configurations.each do |config|
+              config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+            end
+          end
+        end
+        """
+        podfile_path.write_text(podfile)
+        PYEOF
+
+        cd ios && pod install --repo-update
+
+    - name: Build iOS
+      run: |
+        set -o pipefail
+        xcodebuild \
+          -workspace ios/Runner.xcworkspace \
+          -scheme Runner \
+          -configuration Release \
+          -sdk iphoneos \
+          -derivedDataPath build/ios/output \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
+          CODE_SIGN_IDENTITY="" \
+          DEVELOPMENT_TEAM="" \
+          PROVISIONING_PROFILE="" \
+          PROVISIONING_PROFILE_SPECIFIER="" \
+          COMPILER_INDEX_STORE_ENABLE=NO
+
+    - name: Create Payload directory
+      run: mkdir -p build/ios/iphoneos/Payload
+
+    - name: Move app to Payload
+      run: |
+        APP_PATH=$(find build/ios/output -name "Runner.app" -type d | head -1)
+        cp -r "$APP_PATH" build/ios/iphoneos/Payload/
+
+    - name: Create IPA
+      run: cd build/ios/iphoneos && zip -r Fit-App.ipa Payload
+
+    - name: Upload IPA artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Fit-App-${{ github.sha }}
+        path: build/ios/iphoneos/Fit-App.ipa

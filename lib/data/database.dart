@@ -23,6 +23,7 @@ class WorkoutLogs extends Table {
   TextColumn get templateName => text()();
   IntColumn get durationMinutes => integer()();
   RealColumn get totalVolumeKg => real()();
+  RealColumn get caloriesBurned => real().withDefault(const Constant(0.0))();
 }
 
 class WorkoutSets extends Table {

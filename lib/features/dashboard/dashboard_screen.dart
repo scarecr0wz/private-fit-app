@@ -30,18 +30,28 @@ class DashboardScreen extends StatelessWidget {
                   ..orderBy([(t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc)]))
                 .watch(),
             builder: (context, activitySnapshot) {
-              final foods = foodSnapshot.data ?? [];
-              final activities = activitySnapshot.data ?? [];
+              return StreamBuilder<List<WorkoutLog>>(
+                stream: (db.select(db.workoutLogs)
+                      ..where((t) => t.date.isBetweenValues(startOfDay, endOfDay))
+                      ..orderBy([(t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc)]))
+                    .watch(),
+                builder: (context, workoutSnapshot) {
+                  final foods = foodSnapshot.data ?? [];
+                  final activities = activitySnapshot.data ?? [];
+                  final workouts = workoutSnapshot.data ?? [];
 
               int caloriesIn = 0;
               for (final f in foods) {
                 caloriesIn += f.calories.toInt();
               }
 
-              int caloriesOut = 0;
-              for (final a in activities) {
-                caloriesOut += a.caloriesBurned.toInt();
-              }
+                  int caloriesOut = 0;
+                  for (final a in activities) {
+                    caloriesOut += a.caloriesBurned.toInt();
+                  }
+                  for (final w in workouts) {
+                    caloriesOut += w.caloriesBurned.toInt();
+                  }
 
               final meals = foods.map((f) => MealItem(
                     name: f.foodName,
@@ -49,32 +59,39 @@ class DashboardScreen extends StatelessWidget {
                     calories: f.calories.toInt(),
                   )).toList();
 
-              final activityItems = activities.map((a) {
-                String label = 'Aktivitas';
-                if (a.type == 'run') label = 'Lari';
-                if (a.type == 'bike') label = 'Bersepeda';
-                if (a.type == 'gym') label = 'Latihan Beban';
+                  final activityItems = activities.map((a) {
+                    String label = 'Aktivitas';
+                    if (a.type == 'run') label = 'Lari';
+                    if (a.type == 'bike') label = 'Bersepeda';
+                    if (a.type == 'gym') label = 'Latihan Beban';
 
-                String detail = '${a.durationSeconds ~/ 60} min';
-                if (a.distanceMeters > 0) {
-                  detail = '${(a.distanceMeters / 1000).toStringAsFixed(1)} km - $detail';
-                }
+                    String detail = '${a.durationSeconds ~/ 60} min';
+                    if (a.distanceMeters > 0) {
+                      detail = '${(a.distanceMeters / 1000).toStringAsFixed(1)} km - $detail';
+                    }
 
-                return ActivityItem(
-                  type: a.type,
-                  label: label,
-                  detail: detail,
-                  caloriesBurned: a.caloriesBurned.toInt(),
-                );
-              }).toList();
+                    return ActivityItem(
+                      type: a.type,
+                      label: label,
+                      detail: detail,
+                      caloriesBurned: a.caloriesBurned.toInt(),
+                    );
+                  }).toList();
 
-              final summary = DailySummary(
-                caloriesIn: caloriesIn,
-                caloriesOut: caloriesOut,
-                calorieGoal: 2000,
-                activities: activityItems,
-                meals: meals,
-              );
+                  final workoutItems = workouts.map((w) => ActivityItem(
+                    type: 'gym',
+                    label: w.templateName,
+                    detail: '${w.durationMinutes} min • ${w.totalVolumeKg.toInt()} kg',
+                    caloriesBurned: w.caloriesBurned.toInt(),
+                  )).toList();
+
+                  final summary = DailySummary(
+                    caloriesIn: caloriesIn,
+                    caloriesOut: caloriesOut,
+                    calorieGoal: 2000,
+                    activities: [...activityItems, ...workoutItems],
+                    meals: meals,
+                  );
 
               return Stack(
                 children: [
@@ -216,10 +233,12 @@ class DashboardScreen extends StatelessWidget {
           ),
         ],
       );
-      },
-      ),
-      },
-      ),
+    },
+  );
+},
+);
+},
+),
     );
   }
 

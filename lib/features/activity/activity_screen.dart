@@ -156,7 +156,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
       await db.into(db.activityLogs).insert(
         ActivityLogsCompanion.insert(
-          type: 'Outdoor Run',
+          type: 'run',
           date: DateTime.now(),
           durationSeconds: _duration.inSeconds,
           distanceMeters: _distanceKm * 1000,
