@@ -176,7 +176,7 @@ class _StatsScreenState extends State<StatsScreen> {
                                   _buildWeightChartCard(weights),
                                   const SizedBox(height: 32),
                                   Text(
-                                    'History Aktivitas',
+                                    'Activity History',
                                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                           color: AppColors.onSurface,
                                           fontWeight: FontWeight.bold,
@@ -187,7 +187,7 @@ class _StatsScreenState extends State<StatsScreen> {
                                     const Center(
                                       child: Padding(
                                         padding: EdgeInsets.all(20.0),
-                                        child: Text('Belum ada aktivitas', style: TextStyle(color: Colors.white54)),
+                                        child: Text('No activities yet', style: TextStyle(color: Colors.white54)),
                                       ),
                                     )
                                   else
@@ -298,8 +298,8 @@ class _StatsScreenState extends State<StatsScreen> {
       ),
       child: Row(
         children: [
-          Expanded(child: _buildToggleButton('Minggu ini', 0)),
-          Expanded(child: _buildToggleButton('Bulan ini', 1)),
+          Expanded(child: _buildToggleButton('This Week', 0)),
+          Expanded(child: _buildToggleButton('This Month', 1)),
         ],
       ),
     );
@@ -378,7 +378,7 @@ class _StatsScreenState extends State<StatsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Kalori Terbakar',
+            'Burned Calories',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: AppColors.onSurface,
                   fontWeight: FontWeight.bold,
@@ -491,7 +491,7 @@ class _StatsScreenState extends State<StatsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Tren Berat Badan',
+            'Weight Trend',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: AppColors.onSurface,
                   fontWeight: FontWeight.bold,

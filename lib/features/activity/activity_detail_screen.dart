@@ -43,7 +43,7 @@ class ActivityDetailScreen extends StatelessWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
-        title: const Text('Detail Aktivitas'),
+        title: const Text('Activity Detail'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
@@ -128,9 +128,9 @@ class ActivityDetailScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _StatItem(label: 'WAKTU', value: durationStr),
+                      _StatItem(label: 'DURATION', value: durationStr),
                       _StatItem(label: 'PACE', value: paceStr),
-                      _StatItem(label: 'KALORI', value: '${activity.caloriesBurned.toInt()}'),
+                      _StatItem(label: 'CALORIES', value: '${activity.caloriesBurned.toInt()}'),
                     ],
                   ),
                 ],
