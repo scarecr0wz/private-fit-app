@@ -21,13 +21,14 @@ class _FoodScreenState extends State<FoodScreen> {
   bool _hasSearched = false;
   bool _isLoading = false;
 
+  Timer? _debounce;
+
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
-
-  Timer? _debounce;
 
   void _onSearch(String q) {
     if (q.isEmpty) {
@@ -44,6 +45,33 @@ class _FoodScreenState extends State<FoodScreen> {
     });
   }
 
+  Dio _createDio() {
+    return Dio(
+      BaseOptions(
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+      ),
+    );
+  }
+
+  String _errorMessage(dynamic e) {
+    if (e is DioException) {
+      if (e.response?.statusCode == 429) {
+        return 'Terlalu banyak permintaan. Harap tunggu beberapa saat lalu coba lagi.';
+      }
+      if (e.response?.statusCode != null) {
+        return 'Server error (${e.response?.statusCode}). Silakan coba lagi.';
+      }
+      if (e.type == DioExceptionType.connectionTimeout) {
+        return 'Koneksi timeout. Periksa koneksi internet Anda.';
+      }
+      if (e.type == DioExceptionType.connectionError) {
+        return 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
+      }
+    }
+    return 'Terjadi kesalahan. Silakan coba lagi.';
+  }
+
   Future<void> _fetchUSDA(String query) async {
     setState(() {
       _isLoading = true;
@@ -52,7 +80,7 @@ class _FoodScreenState extends State<FoodScreen> {
     });
 
     try {
-      final dio = Dio();
+      final dio = _createDio();
       final response = await dio.get(
         'https://api.nal.usda.gov/fdc/v1/foods/search',
         queryParameters: {
@@ -106,7 +134,7 @@ class _FoodScreenState extends State<FoodScreen> {
         });
       }
     } catch (e) {
-      _showError('Failed to fetch the food database: $e');
+      _showError(_errorMessage(e));
     } finally {
       if (mounted) {
         setState(() {
@@ -144,7 +172,7 @@ class _FoodScreenState extends State<FoodScreen> {
     });
 
     try {
-      final dio = Dio();
+      final dio = _createDio();
       final response = await dio.get(
         'https://world.openfoodfacts.org/api/v3/product/$barcode.json',
       );
@@ -172,6 +200,12 @@ class _FoodScreenState extends State<FoodScreen> {
           _hasSearched = true;
           _results = [foodItem];
         });
+      } else {
+        _showError('Produk tidak ditemukan');
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 429) {
+        _showError('Terlalu banyak permintaan. Harap tunggu beberapa saat lalu coba lagi.');
       } else {
         _showError('Produk tidak ditemukan');
       }

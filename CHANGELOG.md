@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.4.1] - 2026-06-19
+
+### Fixed
+- **Food Screen**: Debounce timer now properly cancelled in `dispose()` to prevent memory leaks and stray API calls
+
+### Changed
+- **Food Screen**: Centralized Dio configuration with `_createDio()` — adds connect/receive timeouts (10s)
+- **Food Screen**: Improved error handling with user-friendly Indonesian messages for HTTP 429 (rate limit), connection timeout, and connection errors
+
 ## [1.4.0] - 2026-06-19
 
 ### Added
