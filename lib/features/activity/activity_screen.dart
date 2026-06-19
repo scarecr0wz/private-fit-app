@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../theme.dart';
 import 'activity_service.dart';
 import 'activity_icons.dart';
@@ -76,8 +77,28 @@ class _ActivityScreenState extends State<ActivityScreen> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => _ActivityTypePicker(
-        onSelected: (type) {
+        onSelected: (type) async {
           Navigator.of(context).pop();
+
+          // Check connectivity
+          try {
+            final connectivityResultList = await Connectivity().checkConnectivity();
+            final isOffline = connectivityResultList.contains(ConnectivityResult.none);
+
+            if (isOffline && mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text(
+                    "You are offline, the map won't be loaded correctly but your route will still be recorded",
+                  ),
+                  backgroundColor: AppColors.error,
+                  duration: const Duration(seconds: 5),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          } catch (_) {}
+
           _svc.beginCountdown(type);
         },
       ),

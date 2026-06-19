@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.5.2] - 2026-06-19
+
+### Added
+- **Activity Tracking**: Added true background tracking support for both Android and iOS.
+  - Android: Implemented Foreground Service with persistent notification to prevent OS from killing the app.
+  - iOS: Enabled Background Location Updates mode in `Info.plist`.
+  - Android: Added necessary permissions (`FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION`, `WAKE_LOCK`, `ACCESS_BACKGROUND_LOCATION`) in `AndroidManifest.xml`.
+- **Activity Tracking**: Absolute time calculation for duration. Prevents timer from pausing when the device goes into deep sleep mode.
+- **Activity Screen**: Offline detection using `connectivity_plus`. Displays a red warning Snackbar if the user starts an activity without internet, clarifying that tracking still works even if the map doesn't load.
+
 ## [1.5.1] - 2026-06-19
 
 ### Changed

@@ -26,7 +26,15 @@ class ActivityService extends ChangeNotifier {
   ActivityState state = ActivityState.idle;
   OutdoorActivityType activityType = OutdoorActivityType.run;
 
-  Duration duration = Duration.zero;
+  Duration _accumulatedDuration = Duration.zero;
+  DateTime? _lastStartTime;
+  
+  Duration get duration {
+    if (state == ActivityState.running && _lastStartTime != null) {
+      return _accumulatedDuration + DateTime.now().difference(_lastStartTime!);
+    }
+    return _accumulatedDuration;
+  }
   double distanceKm = 0.0;
   int calories = 0;
 
@@ -86,9 +94,23 @@ class ActivityService extends ChangeNotifier {
     state = ActivityState.running;
     if (routePoints.isEmpty) {
       try {
+        LocationSettings settings;
+        if (defaultTargetPlatform == TargetPlatform.android) {
+          settings = AndroidSettings(
+            accuracy: LocationAccuracy.high,
+            forceLocationManager: true,
+          );
+        } else if (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS) {
+          settings = AppleSettings(
+            accuracy: LocationAccuracy.high,
+            activityType: ActivityType.fitness,
+          );
+        } else {
+          settings = const LocationSettings(accuracy: LocationAccuracy.high);
+        }
+
         final pos = await Geolocator.getCurrentPosition(
-          locationSettings:
-              const LocationSettings(accuracy: LocationAccuracy.high),
+          locationSettings: settings,
         );
         final startPoint = LatLng(pos.latitude, pos.longitude);
         final now = DateTime.now();
@@ -97,22 +119,51 @@ class ActivityService extends ChangeNotifier {
         _routeData.add(_RoutePointData(point: startPoint, time: now));
       } catch (_) {}
     }
+    _lastStartTime ??= DateTime.now();
     notifyListeners();
     _startTimerAndStream();
   }
 
   void _startTimerAndStream() {
     _timer ??= Timer.periodic(const Duration(seconds: 1), (_) {
-      duration += const Duration(seconds: 1);
+      // The duration getter automatically calculates the current duration 
+      // based on _lastStartTime, so we just need to notify listeners to update UI.
       _recalcSpeed();
       notifyListeners();
     });
 
-    _positionSub ??= Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
+    LocationSettings settings;
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      settings = AndroidSettings(
         accuracy: LocationAccuracy.high,
         distanceFilter: 2,
-      ),
+        forceLocationManager: true,
+        intervalDuration: const Duration(seconds: 1),
+        foregroundNotificationConfig: const ForegroundNotificationConfig(
+          notificationText:
+              "Aplikasi sedang melacak aktivitas Anda di latar belakang.",
+          notificationTitle: "FitApp Tracking",
+          enableWakeLock: true,
+        ),
+      );
+    } else if (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS) {
+      settings = AppleSettings(
+        accuracy: LocationAccuracy.high,
+        activityType: ActivityType.fitness,
+        distanceFilter: 2,
+        pauseLocationUpdatesAutomatically: false,
+        showBackgroundLocationIndicator: true,
+        allowBackgroundLocationUpdates: true,
+      );
+    } else {
+      settings = const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 2,
+      );
+    }
+
+    _positionSub ??= Geolocator.getPositionStream(
+      locationSettings: settings,
     ).listen((pos) {
       if (state != ActivityState.running) return;
 
@@ -180,6 +231,10 @@ class ActivityService extends ChangeNotifier {
   // ─── Pause ────────────────────────────────────────────────────────────────
   void pauseActivity() {
     state = ActivityState.paused;
+    if (_lastStartTime != null) {
+      _accumulatedDuration += DateTime.now().difference(_lastStartTime!);
+      _lastStartTime = null;
+    }
     _timer?.cancel();
     _timer = null;
     notifyListeners();
@@ -188,6 +243,7 @@ class ActivityService extends ChangeNotifier {
   // ─── Resume ───────────────────────────────────────────────────────────────
   void resumeActivity() {
     state = ActivityState.running;
+    _lastStartTime = DateTime.now();
     notifyListeners();
     _startTimerAndStream();
   }
@@ -233,7 +289,8 @@ class ActivityService extends ChangeNotifier {
 
     // Reset semua state
     state = ActivityState.idle;
-    duration = Duration.zero;
+    _accumulatedDuration = Duration.zero;
+    _lastStartTime = null;
     distanceKm = 0.0;
     calories = 0;
     speedDisplay = "0'00\"";

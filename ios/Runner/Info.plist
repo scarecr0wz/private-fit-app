@@ -72,6 +72,10 @@
 		<string>FitApp butuh lokasi di background untuk tracking rute yang akurat.</string>
 		<key>NSCameraUsageDescription</key>
 		<string>FitApp butuh akses kamera untuk scan barcode makanan.</string>
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>location</string>
+		</array>
 		<key>UIStatusBarHidden</key>
 		<false/>
 	</dict>
