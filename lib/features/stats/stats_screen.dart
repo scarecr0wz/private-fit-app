@@ -2,8 +2,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../data/database.dart';
-
 import '../../theme.dart';
+import 'package:intl/intl.dart';
+import 'package:drift/drift.dart' as drift;
+import '../activity/activity_detail_screen.dart';
 
 
 class StatsScreen extends StatefulWidget {
@@ -175,6 +177,7 @@ class _StatsScreenState extends State<StatsScreen> {
                                   'type': a.type,
                                   'calories': a.caloriesBurned.toInt(),
                                   'date': a.date,
+                                  'raw': a,
                                 });
                               }
                               
@@ -185,6 +188,7 @@ class _StatsScreenState extends State<StatsScreen> {
                                   'type': 'gym',
                                   'calories': w.caloriesBurned.toInt(),
                                   'date': w.date,
+                                  'raw': w,
                                 });
                               }
                               
@@ -198,8 +202,19 @@ class _StatsScreenState extends State<StatsScreen> {
 
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 12.0),
-                                child: _GlassCard(
-                                  child: Row(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    if (type == 'run' || type == 'bike') {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => ActivityDetailScreen(activity: a['raw']),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: _GlassCard(
+                                    child: Row(
                                     children: [
                                       Container(
                                         width: 48,

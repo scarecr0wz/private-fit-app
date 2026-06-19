@@ -19,7 +19,8 @@ Dokumen ini berisi daftar temuan dari *Smoke Test* pengguna dan rencana aksi unt
   - Memperbarui UI daftar makanan di tab *Food* agar menampilkan Protein, Karbo, dan Lemak.
   - Memodifikasi *response* parser dari API USDA/OpenFoodFacts saat *search* agar mengambil URL gambar (thumbnail) dan menampilkannya di *list*.
 
-## 4. Activity & Stats - Keakuratan & Detail History
+## ✅ 4. Activity & Stats - Keakuratan & Detail History
+- **Status:** **DONE** (Perhitungan *pace* & kalori sudah sesuai. `StatsScreen` kini punya rincian *timing* (durasi) & *calories*, dan jika card-nya ditekan, akan membuka `ActivityDetailScreen` yang menampilkan rute peta & parameter komprehensif).
 - **Masalah:** Di *Activity*, akurasi perhitungan *pace* dan kalori perlu dikonfirmasi. Saat selesai dan masuk ke tab *Stats*, durasi (*timing*) dan kalori kurang menonjol. Selain itu, belum ada fitur klik untuk melihat detail aktivitas (seperti Peta/Rute).
 - **Rencana Aksi:** 
   - Validasi formula jarak/waktu (Pace) dan Kalori (MET formula) di `activity_screen.dart`.
