@@ -131,13 +131,13 @@ class DashboardScreen extends StatelessWidget {
                     const SizedBox(height: 28),
 
                     // Aktivitas
-                    _buildSectionHeader(context, 'Aktivitas', 'Lihat Semua'),
+                    _buildSectionHeader(context, 'Aktivitas', 'Lihat Semua', Icons.chevron_right),
                     const SizedBox(height: 12),
                     ...summary.activities.map((a) => _ActivityCard(item: a)),
                     const SizedBox(height: 28),
 
                     // Makanan
-                    _buildSectionHeader(context, 'Makanan', 'Tambah'),
+                    _buildSectionHeader(context, 'Makanan', 'Tambah', Icons.add),
                     const SizedBox(height: 12),
                     _MealList(meals: summary.meals),
                   ]),
@@ -223,18 +223,31 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildSectionHeader(
-      BuildContext context, String title, String action) {
+      BuildContext context, String title, String action, IconData icon) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(title, style: Theme.of(context).textTheme.titleMedium),
         GestureDetector(
           onTap: () {},
-          child: Text(
-            action,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AppColors.primary,
-                ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon == Icons.add) ...[
+                Icon(icon, color: AppColors.primary, size: 16),
+                const SizedBox(width: 4),
+              ],
+              Text(
+                action,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: AppColors.primary,
+                    ),
+              ),
+              if (icon != Icons.add) ...[
+                const SizedBox(width: 4),
+                Icon(icon, color: AppColors.primary, size: 16),
+              ],
+            ],
           ),
         ),
       ],

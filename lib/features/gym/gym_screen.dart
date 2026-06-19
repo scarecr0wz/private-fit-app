@@ -430,35 +430,72 @@ class _MotivationalBento extends StatelessWidget {
   }
 }
 
-class _Fab3D extends StatelessWidget {
+class _Fab3D extends StatefulWidget {
   const _Fab3D();
 
   @override
+  State<_Fab3D> createState() => _Fab3DState();
+}
+
+class _Fab3DState extends State<_Fab3D> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 64,
-      height: 64,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          colors: [AppColors.primary, AppColors.inversePrimary],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: () {},
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 100),
+        transform: Matrix4.translationValues(0, _pressed ? 2 : 0, 0),
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFD4D1FF), AppColors.primary, Color(0xFFB3AFF2)],
+            stops: [0.0, 0.5, 1.0],
+          ),
+          boxShadow: _pressed
+              ? [
+                  const BoxShadow(
+                    color: Color(0xFF7E79DF),
+                    offset: Offset(0, 2),
+                    blurRadius: 0,
+                  ),
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [
+                  const BoxShadow(
+                    color: Color(0xFF7E79DF),
+                    offset: Offset(0, 4),
+                    blurRadius: 0,
+                  ),
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.4),
+            width: 1,
+          ),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x66000000),
-            blurRadius: 16,
-            offset: Offset(0, 8),
-          ),
-          BoxShadow(
-            color: Color(0x80C4C0FF),
-            blurRadius: 8,
-            spreadRadius: -4,
-          ),
-        ],
+        child: const Icon(
+          Icons.play_arrow_rounded,
+          color: AppColors.onPrimary,
+          size: 32,
+        ),
       ),
-      child: const Icon(Icons.play_arrow_rounded, color: AppColors.onPrimary, size: 40),
     );
   }
 }
