@@ -321,7 +321,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                       _buildDivider(),
                       Expanded(
                         child: _StatItem(
-                          label: 'Jarak',
+                          label: 'Distance',
                           value: '${_distanceKm.toStringAsFixed(2)} km',
                         ),
                       ),
@@ -335,7 +335,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                       _buildDivider(),
                       Expanded(
                         child: _StatItem(
-                          label: 'Kalori',
+                          label: 'Calories',
                           value: '$_calories kcal',
                         ),
                       ),
