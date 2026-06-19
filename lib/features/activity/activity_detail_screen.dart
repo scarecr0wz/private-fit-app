@@ -303,12 +303,19 @@ class ActivityDetailScreen extends StatelessWidget {
 
       while (cumDist >= nextCheckpoint && segPaces.isNotEmpty) {
         final avgPace = segPaces.reduce((a, b) => a + b) / segPaces.length;
+        
+        double? diff;
+        if (result.isNotEmpty) {
+          diff = avgPace - result.last.paceMinPerKm;
+        }
+
         final paceMin = avgPace.floor();
         final paceSec = ((avgPace - paceMin) * 60).floor();
         result.add(_PaceHistoryEntry(
           distanceKm: nextCheckpoint,
           paceMinPerKm: avgPace,
           paceLabel: "$paceMin'${paceSec.toString().padLeft(2, '0')}\"",
+          diffMinPerKm: diff,
         ));
         segPaces.clear();
         nextCheckpoint += 0.5;
@@ -420,10 +427,13 @@ class _PaceHistoryEntry {
   final double distanceKm;
   final double paceMinPerKm;
   final String paceLabel;
+  final double? diffMinPerKm;
+
   _PaceHistoryEntry({
     required this.distanceKm,
     required this.paceMinPerKm,
     required this.paceLabel,
+    this.diffMinPerKm,
   });
 }
 
@@ -511,6 +521,53 @@ class _PaceHistoryRow extends StatelessWidget {
                     color: color,
                     fontWeight: FontWeight.w700,
                   ),
+            ),
+          ),
+
+          // Difference badge
+          if (entry.diffMinPerKm != null) _buildDiffBadge(entry.diffMinPerKm!),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDiffBadge(double diff) {
+    if (diff.abs() < 0.016) return const SizedBox(width: 48); // Kosong jika beda kurang dari 1 detik
+    
+    final isFaster = diff < 0; 
+    final diffSecs = (diff.abs() * 60).round();
+    final diffMin = diffSecs ~/ 60;
+    final diffSecRemainder = diffSecs % 60;
+    
+    String diffStr;
+    if (diffMin > 0) {
+      diffStr = "$diffMin'${diffSecRemainder.toString().padLeft(2, '0')}\"";
+    } else {
+      diffStr = "$diffSecRemainder\"";
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(left: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      decoration: BoxDecoration(
+        color: isFaster ? Colors.green.withValues(alpha: 0.15) : Colors.red.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isFaster ? Icons.keyboard_double_arrow_up : Icons.keyboard_double_arrow_down,
+            size: 10,
+            color: isFaster ? Colors.greenAccent : Colors.redAccent,
+          ),
+          const SizedBox(width: 2),
+          Text(
+            diffStr,
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              color: isFaster ? Colors.greenAccent : Colors.redAccent,
             ),
           ),
         ],

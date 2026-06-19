@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.3] - 2026-06-19
+
+### Added
+- **Activity Detail Screen**: Pace history list now displays pace difference (faster/slower) compared to the previous segment.
+  - Slower pace is marked with a red downward arrow (↓) and red highlight.
+  - Faster pace is marked with a green upward arrow (↑) and green highlight.
+
 ## [1.5.2] - 2026-06-19
 
 ### Added
