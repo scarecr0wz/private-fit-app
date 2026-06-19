@@ -6,6 +6,7 @@ import 'features/dashboard/dashboard_screen.dart';
 import 'features/food/food_screen.dart';
 import 'features/activity/activity_screen.dart';
 import 'features/gym/gym_screen.dart';
+import 'features/stats/stats_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/',
@@ -17,6 +18,7 @@ final router = GoRouter(
         GoRoute(path: '/food', builder: (c, s) => const FoodScreen()),
         GoRoute(path: '/activity', builder: (c, s) => const ActivityScreen()),
         GoRoute(path: '/gym', builder: (c, s) => const GymScreen()),
+        GoRoute(path: '/stats', builder: (c, s) => const StatsScreen()),
       ],
     ),
   ],
@@ -31,6 +33,7 @@ class ScaffoldWithNav extends StatelessWidget {
     if (location == '/food') return 1;
     if (location == '/activity') return 2;
     if (location == '/gym') return 3;
+    if (location == '/stats') return 4;
     return 0;
   }
 
@@ -44,6 +47,8 @@ class ScaffoldWithNav extends StatelessWidget {
         context.go('/activity');
       case 3:
         context.go('/gym');
+      case 4:
+        context.go('/stats');
     }
   }
 
@@ -74,6 +79,7 @@ class _KineticBottomNav extends StatelessWidget {
     _NavItem(icon: Icons.restaurant_outlined, activeIcon: Icons.restaurant, label: 'Food'),
     _NavItem(icon: Icons.directions_run_outlined, activeIcon: Icons.directions_run, label: 'Activity'),
     _NavItem(icon: Icons.fitness_center_outlined, activeIcon: Icons.fitness_center, label: 'Gym'),
+    _NavItem(icon: Icons.bar_chart_outlined, activeIcon: Icons.bar_chart, label: 'Stats'),
   ];
 
   @override
