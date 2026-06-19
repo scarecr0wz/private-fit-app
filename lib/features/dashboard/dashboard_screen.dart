@@ -61,10 +61,10 @@ class DashboardScreen extends StatelessWidget {
                   )).toList();
 
                   final activityItems = activities.map((a) {
-                    String label = 'Aktivitas';
-                    if (a.type == 'run') label = 'Lari';
-                    if (a.type == 'bike') label = 'Bersepeda';
-                    if (a.type == 'gym') label = 'Latihan Beban';
+                    String label = 'Activity';
+                    if (a.type == 'run') label = 'Running';
+                    if (a.type == 'bike') label = 'Cycling';
+                    if (a.type == 'gym') label = 'Weight Training';
 
                     String detail = '${a.durationSeconds ~/ 60} min';
                     if (a.distanceMeters > 0) {
@@ -210,8 +210,8 @@ class DashboardScreen extends StatelessWidget {
                     _buildCalorieSection(context, summary),
                     const SizedBox(height: 28),
 
-                    // Aktivitas
-                    _buildSectionHeader(context, 'Aktivitas', 'Lihat Semua', Icons.chevron_right, onTap: () {
+                    // Activity
+                    _buildSectionHeader(context, 'Activity', 'View All', Icons.chevron_right, onTap: () {
                       GoRouter.of(context).go('/activity');
                     }),
                     const SizedBox(height: 12),
@@ -219,7 +219,7 @@ class DashboardScreen extends StatelessWidget {
                     const SizedBox(height: 28),
 
                     // Makanan
-                    _buildSectionHeader(context, 'Makanan', 'Tambah', Icons.add, onTap: () {
+                    _buildSectionHeader(context, 'Foods', 'Add', Icons.add, onTap: () {
                       GoRouter.of(context).go('/food');
                     }),
                     const SizedBox(height: 12),
@@ -254,7 +254,7 @@ class DashboardScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Halo, User! 👋',
+          'Hello, User! 👋',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 color: AppColors.onSurface,
                 shadows: const [
@@ -291,7 +291,7 @@ class DashboardScreen extends StatelessWidget {
           children: [
             Expanded(
               child: _Pill3D(
-                label: 'Masuk',
+                label: 'Intake',
                 value: summary.caloriesIn,
                 color: AppColors.secondary,
                 borderColor: const Color(0x8001CAA8),
@@ -301,7 +301,7 @@ class DashboardScreen extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               child: _Pill3D(
-                label: 'Keluar',
+                label: 'Outtake',
                 value: summary.caloriesOut,
                 color: AppColors.tertiary,
                 borderColor: const Color(0x80F1589A),
