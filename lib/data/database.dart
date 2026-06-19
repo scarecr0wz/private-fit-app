@@ -1,8 +1,5 @@
-import 'dart:io';
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
+import 'connection/connection.dart' as connection;
 
 part 'database.g.dart';
 
@@ -10,7 +7,7 @@ class FoodLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
   DateTimeColumn get date => dateTime()();
   TextColumn get foodName => text()();
-  RealColumn get grams => real()();
+  RealColumn get grams => real()(); 
   RealColumn get calories => real()();
   RealColumn get protein => real()();
   RealColumn get carbs => real()();
@@ -50,14 +47,6 @@ class BodyWeights extends Table {
   RealColumn get weightKg => real()();
 }
 
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'fitapp.sqlite'));
-    return NativeDatabase.createInBackground(file);
-  });
-}
-
 @DriftDatabase(tables: [
   FoodLogs,
   WorkoutLogs,
@@ -66,7 +55,7 @@ LazyDatabase _openConnection() {
   BodyWeights,
 ])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  AppDatabase() : super(connection.connect());
 
   @override
   int get schemaVersion => 1;
