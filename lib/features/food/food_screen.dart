@@ -105,7 +105,7 @@ class _FoodScreenState extends State<FoodScreen> {
         });
       }
     } catch (e) {
-      _showError('Gagal mencari makanan: $e');
+      _showError('Failed to fetch the food database: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -337,7 +337,7 @@ class _FoodScreenState extends State<FoodScreen> {
                       color: AppColors.onSurface,
                     ),
                 decoration: InputDecoration(
-                  hintText: 'Cari makanan...',
+                  hintText: 'Find your foods...',
                   hintStyle:
                       Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: AppColors.onSurfaceVariant
@@ -438,7 +438,7 @@ class _FoodScreenState extends State<FoodScreen> {
             if (i == 0) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8.0, left: 4),
-                child: Text('Riwayat Hari Ini', style: Theme.of(context).textTheme.titleMedium),
+                child: Text('What You Ate Today', style: Theme.of(context).textTheme.titleMedium),
               );
             }
             final log = logs[i - 1];
