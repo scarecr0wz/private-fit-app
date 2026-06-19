@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:drift/drift.dart' hide Column;
 import '../../theme.dart';
@@ -210,13 +211,17 @@ class DashboardScreen extends StatelessWidget {
                     const SizedBox(height: 28),
 
                     // Aktivitas
-                    _buildSectionHeader(context, 'Aktivitas', 'Lihat Semua', Icons.chevron_right),
+                    _buildSectionHeader(context, 'Aktivitas', 'Lihat Semua', Icons.chevron_right, onTap: () {
+                      GoRouter.of(context).go('/activity');
+                    }),
                     const SizedBox(height: 12),
                     ...summary.activities.map((a) => _ActivityCard(item: a)),
                     const SizedBox(height: 28),
 
                     // Makanan
-                    _buildSectionHeader(context, 'Makanan', 'Tambah', Icons.add),
+                    _buildSectionHeader(context, 'Makanan', 'Tambah', Icons.add, onTap: () {
+                      GoRouter.of(context).go('/food');
+                    }),
                     const SizedBox(height: 12),
                     _MealList(meals: summary.meals),
                   ]),
@@ -229,7 +234,9 @@ class DashboardScreen extends StatelessWidget {
           Positioned(
             bottom: 96,
             right: 20,
-            child: _Fab3D(),
+            child: _Fab3D(onTap: () {
+              GoRouter.of(context).go('/food');
+            }),
           ),
         ],
       );
@@ -308,13 +315,13 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildSectionHeader(
-      BuildContext context, String title, String action, IconData icon) {
+      BuildContext context, String title, String action, IconData icon, {VoidCallback? onTap}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(title, style: Theme.of(context).textTheme.titleMedium),
         GestureDetector(
-          onTap: () {},
+          onTap: onTap,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -343,6 +350,10 @@ class DashboardScreen extends StatelessWidget {
 // ── 3D FAB ────────────────────────────────────────────────────────────────────
 
 class _Fab3D extends StatefulWidget {
+  final VoidCallback? onTap;
+
+  const _Fab3D({this.onTap});
+
   @override
   State<_Fab3D> createState() => _Fab3DState();
 }
@@ -356,7 +367,7 @@ class _Fab3DState extends State<_Fab3D> {
       onTapDown: (_) => setState(() => _pressed = true),
       onTapUp: (_) => setState(() => _pressed = false),
       onTapCancel: () => setState(() => _pressed = false),
-      onTap: () {},
+      onTap: widget.onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 100),
         transform: Matrix4.translationValues(0, _pressed ? 2 : 0, 0),

@@ -7,7 +7,8 @@ Dokumen ini berisi daftar temuan dari *Smoke Test* pengguna dan rencana aksi unt
 - **Masalah:** Cincin (lingkaran) kalori tidak berputar/terisi untuk memenuhi kebutuhan harian.
 - **Rencana Aksi:** Memperbaiki logika animasi dan rasio pada widget `CalorieRing` di `dashboard_screen.dart` agar nilai `consumed` dibagi dengan `goal` tervisualisasi dengan benar.
 
-## 2. Dashboard - Tombol Aksi (Tambah & FAB)
+## ✅ 2. Dashboard - Tombol Aksi (Tambah & FAB)
+- **Status:** **DONE** (Sudah disambungkan ke *router* Tab Food dan Activity).
 - **Masalah:** Tombol teks "Tambah" pada bagian Makanan dan *Floating Action Button* (+) 3D di pojok kanan bawah belum memiliki fungsi.
 - **Rencana Aksi:** Menyambungkan `onTap` pada tombol-tombol tersebut agar mengarahkan pengguna ke Tab *Food* atau membuka *Bottom Sheet* pencatatan cepat.
 
