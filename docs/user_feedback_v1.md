@@ -12,7 +12,8 @@ Dokumen ini berisi daftar temuan dari *Smoke Test* pengguna dan rencana aksi unt
 - **Masalah:** Tombol teks "Tambah" pada bagian Makanan dan *Floating Action Button* (+) 3D di pojok kanan bawah belum memiliki fungsi.
 - **Rencana Aksi:** Menyambungkan `onTap` pada tombol-tombol tersebut agar mengarahkan pengguna ke Tab *Food* atau membuka *Bottom Sheet* pencatatan cepat.
 
-## 3. Food Screen - Detail Makro & Gambar Pencarian
+## ✅ 3. Food Screen - Detail Makro & Gambar Pencarian
+- **Status:** **DONE** (Riwayat "Hari Ini" sudah diganti menggunakan StreamBuilder dari SQLite lengkap dengan makro P/C/F, dan pencarian API USDA/Barcode sudah dikonfigurasi untuk menampilkan URL gambar `image_front_url`).
 - **Masalah:** Daftar makanan yang dimakan hari ini hanya menampilkan total kalori (kurang detail makro/mikro). Saat pencarian teks, gambar makanan belum muncul (meski sistem Barcode sudah sempurna).
 - **Rencana Aksi:** 
   - Memperbarui UI daftar makanan di tab *Food* agar menampilkan Protein, Karbo, dan Lemak.

@@ -94,6 +94,7 @@ class _FoodScreenState extends State<FoodScreen> {
           protein: protein,
           carbs: carbs,
           fat: fat,
+          imageUrl: food['image'],
         ));
       }
 
@@ -162,6 +163,7 @@ class _FoodScreenState extends State<FoodScreen> {
           protein: proteins,
           carbs: carbs,
           fat: fat,
+          imageUrl: product['image_front_url'],
         );
 
         setState(() {
@@ -229,7 +231,7 @@ class _FoodScreenState extends State<FoodScreen> {
                     : _hasSearched && _results.isEmpty
                         ? _buildNoResults(context)
                         : !_hasSearched
-                            ? _buildEmptyState(context)
+                            ? _buildTodayHistory(context)
                             : _buildResultsList(context),
               ),
             ],
@@ -361,74 +363,124 @@ class _FoodScreenState extends State<FoodScreen> {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          // Tip card — glass style
-          _GlassCard(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildTodayHistory(BuildContext context) {
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
+    return StreamBuilder<List<FoodLog>>(
+      stream: (db.select(db.foodLogs)
+            ..where((t) => t.date.isBetweenValues(startOfDay, endOfDay))
+            ..orderBy([(t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc)]))
+          .watch(),
+      builder: (context, snapshot) {
+        final logs = snapshot.data ?? [];
+        if (logs.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
               children: [
-                const Icon(Icons.info_outline,
-                    color: AppColors.secondary, size: 18),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
+                _GlassCard(
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Tip Hari Ini',
-                        style:
-                            Theme.of(context).textTheme.labelMedium?.copyWith(
-                                  color: AppColors.secondary,
-                                ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Mengonsumsi protein setelah berolahraga dapat membantu pemulihan otot lebih cepat.',
-                        style:
-                            Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: AppColors.onSurface,
-                                  height: 1.5,
-                                ),
+                      const Icon(Icons.info_outline,
+                          color: AppColors.secondary, size: 18),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Tip Hari Ini',
+                              style: Theme.of(context).textTheme.labelMedium?.copyWith(color: AppColors.secondary),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Catat makananmu agar progress terlihat nyata!',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.onSurface, height: 1.5),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
+                const Spacer(),
+                Container(
+                  width: 96,
+                  height: 96,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.surfaceContainerHigh,
+                  ),
+                  child: const Icon(Icons.restaurant,
+                      color: AppColors.secondary, size: 44),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Cari makanan atau scan barcode',
+                  style: Theme.of(context).textTheme.titleMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const Spacer(),
               ],
             ),
-          ),
-          const Spacer(),
-          Container(
-            width: 96,
-            height: 96,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.surfaceContainerHigh,
-            ),
-            child: const Icon(Icons.restaurant,
-                color: AppColors.secondary, size: 44),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Cari makanan atau scan barcode',
-            style: Theme.of(context).textTheme.titleMedium,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Lacak nutrisi harian kamu untuk\nmencapai target kebugaran',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                  height: 1.6,
-                ),
-            textAlign: TextAlign.center,
-          ),
-          const Spacer(),
-        ],
-      ),
+          );
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+          itemCount: logs.length + 1,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (_, i) {
+            if (i == 0) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8.0, left: 4),
+                child: Text('Riwayat Hari Ini', style: Theme.of(context).textTheme.titleMedium),
+              );
+            }
+            final log = logs[i - 1];
+            return _GlassCard(
+              child: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.check_circle, color: AppColors.secondary),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(log.foodName, style: Theme.of(context).textTheme.titleMedium),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Text('${log.calories.toInt()} kcal', style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold, fontSize: 12)),
+                            const SizedBox(width: 8),
+                            Text('P: ${log.protein.toStringAsFixed(1)}g', style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
+                            const SizedBox(width: 8),
+                            Text('C: ${log.carbs.toStringAsFixed(1)}g', style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
+                            const SizedBox(width: 8),
+                            Text('F: ${log.fat.toStringAsFixed(1)}g', style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text('${log.portionGrams.toInt()}g', style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -524,9 +576,16 @@ class _FoodResultCard3D extends StatelessWidget {
                     offset: Offset(0, 2),
                   ),
                 ],
+                image: food.imageUrl != null
+                    ? DecorationImage(
+                        image: NetworkImage(food.imageUrl!),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
               ),
-              child: const Icon(Icons.restaurant,
-                  color: AppColors.onSurfaceVariant, size: 22),
+              child: food.imageUrl == null
+                  ? const Icon(Icons.restaurant, color: AppColors.onSurfaceVariant, size: 22)
+                  : null,
             ),
             const SizedBox(width: 14),
             Expanded(

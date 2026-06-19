@@ -5,6 +5,7 @@ class FoodItem {
   final double protein;
   final double carbs;
   final double fat;
+  final String? imageUrl;
 
   const FoodItem({
     required this.id,
@@ -13,6 +14,7 @@ class FoodItem {
     required this.protein,
     required this.carbs,
     required this.fat,
+    this.imageUrl,
   });
 }
 
