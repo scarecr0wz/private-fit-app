@@ -19,86 +19,88 @@
   <br>
 </div>
 
-FitApp adalah aplikasi fitness personal yang dibangun dengan **Flutter** dan **offline-first architecture**. Aplikasi ini dirancang untuk membantu pengguna mencatat asupan makanan, melacak latihan gym, memantau aktivitas outdoor (lari/bersepeda) dengan GPS, serta melihat statistik perkembangan kebugaran — semuanya tersimpan secara lokal di perangkat tanpa perlu koneksi internet.
+FitApp is a personal fitness tracker built with **Flutter** and an **offline-first architecture**. This project was born from my own passion for working out and the desire to have a platform fully tailored to how I train, eat, and track progress — built by me, for me.
 
-> **Status:** Open source — dikembangkan untuk kepentingan pribadi dan pembelajaran. Backend (Hono + Bun + PostgreSQL) sedang dalam tahap perencanaan.
+It helps you log your meals, scan barcodes, track outdoor runs and rides with GPS, record gym workouts with sets and reps, and visualize your stats — all stored locally on your device with no internet required.
+
+> **Status:** Open source — built for personal use and learning. Backend sync (Hono + Bun + PostgreSQL) is planned.
 
 ---
 
-## ✨ Fitur
+## ✨ Features
 
-### 📊 Dashboard Harian
-- Ringkasan kalori harian dengan **CalorieRing** interaktif (3D arc progress)
-- Statistik intake vs outtake dalam bentuk pill cards
-- Daftar aktivitas terbaru (lari, gowes, gym)
-- Riwayat makanan hari ini lengkap dengan waktu dan kalori
-- Tombol aksi cepat untuk membuka Food Logger
+### 📊 Daily Dashboard
+- Daily calorie summary with an interactive **CalorieRing** (3D animated arc)
+- Intake vs outtake stats in pill cards
+- Recent activity feed (running, cycling, gym)
+- Today's meal history with timestamps and calories
+- Quick action FAB to open the Food Logger
 
 ### 🍽️ Food Logger
-- **Pencarian makanan** via USDA FoodData Central API (debounce 500ms)
-- **Pindai barcode** produk menggunakan kamera + Open Food Facts API
-- Porsi adjustable (10–500g) dengan rincian makro (kalori, protein, karbohidrat, lemak)
-- **Nutrition chart** — arc chart kustom dengan glow effect per makro
-- Riwayat makanan harian tersimpan di database lokal
+- **Food search** via the USDA FoodData Central API (500ms debounce)
+- **Barcode scanning** using the camera + Open Food Facts API
+- Adjustable portion size (10–500g) with full macro breakdown (calories, protein, carbs, fat)
+- **Custom nutrition chart** — arc chart with per-macro glow effects
+- Daily food history persisted to local database
 
 ### 🏃 Activity Tracker (GPS)
-- Pelacakan aktivitas outdoor real-time dengan **FlutterMap** (CartoDB dark tiles)
-- Dua mode: **Running** (pace min/km) dan **Cycling** (speed km/h)
-- Countdown 5 detik sebelum memulai
-- Live stats: durasi, jarak, pace/speed, estimasi kalori
-- Kontrol Start / Pause / Stop dengan 3D buttons
-- **LIVE indicator badge** saat aktivitas berlangsung
-- Marker kustom: Red Bull F1 untuk gowes, icon shoe untuk lari
+- Real-time outdoor activity tracking with **FlutterMap** (CartoDB dark tiles)
+- Two modes: **Running** (pace in min/km) and **Cycling** (speed in km/h)
+- 5-second countdown before starting
+- Live stats overlay: duration, distance, pace/speed, estimated calories
+- Start / Pause / Stop controls with 3D buttons
+- **LIVE indicator badge** while tracking
+- Custom map markers: Red Bull F1-inspired for cycling, running shoe for running
 
 ### 🏋️ Gym Logger
-- Workout lifecycle: mulai → tambah set → selesai
-- Template rutin: Push Day, Pull Day, Leg Day, Cardio
-- Tracking sets per exercise (reps, weight)
-- Tambah set via bottom sheet dengan slider weight & reps
-- Ringkasan durasi, total volume (kg), dan estimasi kalori
+- Full workout lifecycle: start → add sets → finish
+- Routine templates: Push Day, Pull Day, Leg Day, Cardio
+- Per-exercise set tracking (reps, weight)
+- Add sets via a bottom sheet with weight & reps sliders
+- Workout summary: duration, total volume (kg), estimated calories burned
 
 ### 📈 Stats & History
-- **Bar chart** kalori terbakar per hari (minggu ini / bulan ini)
-- **Line chart** tren berat badan (7 entri terakhir)
-- Riwayat aktivitas gabungan (outdoor + gym) diurutkan berdasarkan tanggal
-- **Activity Detail** — rute di peta dengan polyline berwarna berdasarkan pace
-  - Hijau (cepat), Kuning (sedang), Merah (lambat)
-  - Pace checkpoint setiap 0.5km dengan colored bubbles
-  - Pace history dengan horizontal progress bars
+- **Bar chart** — daily calories burned (this week / this month)
+- **Line chart** — body weight trend (last 7 entries)
+- Combined activity history (outdoor + gym), sorted by date
+- **Activity Detail** — route map with pace-colored polyline:
+  - Green (fast), Yellow (moderate), Red (slow)
+  - Pace checkpoint every 0.5km with colored bubbles
+  - Pace history with horizontal progress bars
 
-### 🎨 Tampilan & Tema
-- **Dark theme** penuh dengan gaya **glassmorphism** dan aksen 3D
-- Palet warna: Electric Indigo, Aquamarine, Punch Pink
+### 🎨 UI & Theme
+- **Dark theme** with **glassmorphism** and 3D accents
+- Custom palette: Electric Indigo, Aquamarine, Punch Pink
 - Font: Inter (Google Fonts)
-- Animasi splash screen 3D dengan logo
-- Bottom navigation dengan glassmorphism blur (GoRouter ShellRoute)
+- Animated 3D splash screen
+- Bottom navigation with glassmorphism blur (GoRouter ShellRoute)
 
 ---
 
 ## 🧰 Tech Stack
 
-| Lapisan | Teknologi |
+| Layer | Technology |
 |---|---|
 | **Framework** | Flutter 3.41 • Dart 3.11 |
 | **State Management** | Riverpod (`flutter_riverpod`) + ChangeNotifier |
 | **Navigation** | GoRouter 13.x (ShellRoute + bottom nav) |
-| **Database** | Drift 2.34 (SQLite ORM code-generated) |
+| **Database** | Drift 2.34 (SQLite ORM, code-generated) |
 | **Maps** | FlutterMap + OpenStreetMap (CartoDB dark tiles) |
-| **Lokasi** | Geolocator (GPS streaming) |
+| **Location** | Geolocator (GPS streaming) |
 | **Scanner** | Mobile Scanner (barcode) |
-| **API** | USDA FoodData Central • Open Food Facts v3 |
+| **APIs** | USDA FoodData Central • Open Food Facts v3 |
 | **Charts** | fl_chart • CustomPaint |
 | **CI/CD** | GitHub Actions (iOS build → .ipa artifact) |
 
 ---
 
-## 📸 Screenshot
+## 📸 Screenshots
 
-> _Coming soon — tangkapan layar akan ditambahkan setelah sesi polish._
+> _Coming soon — screenshots will be added after the polish session._
 
 ---
 
-## 🏗️ Arsitektur
+## 🏗️ Architecture
 
 ```
 lib/
@@ -118,27 +120,27 @@ lib/
     └── widgets/               # CalorieRing, GlassCard, 3D buttons, etc.
 ```
 
-### Arsitektur Data
+### Data Architecture
 
-- **Offline-first** — semua data disimpan lokal di SQLite via Drift
-- 5 tabel utama: `FoodLogs`, `WorkoutLogs`, `WorkoutSets`, `ActivityLogs`, `BodyWeights`
-- State outdoor activity dikelola oleh `ActivityService` (singleton ChangeNotifier) agar tetap aktif saat navigasi antar tab
-- Integrasi API eksternal (USDA, Open Food Facts) untuk enrichment data makanan
+- **Offline-first** — all data is stored locally in SQLite via Drift
+- 5 main tables: `FoodLogs`, `WorkoutLogs`, `WorkoutSets`, `ActivityLogs`, `BodyWeights`
+- Outdoor activity state is managed by `ActivityService` (singleton ChangeNotifier) to persist across tab switches
+- External APIs (USDA, Open Food Facts) enrich food data on demand
 
 ---
 
-## 🚀 Mulai
+## 🚀 Getting Started
 
-### Prasyarat
+### Prerequisites
 
-- Flutter SDK 3.41+ ([install](https://docs.flutter.dev/get-started/install))
+- Flutter SDK 3.41+ ([install guide](https://docs.flutter.dev/get-started/install))
 - Dart 3.11+ (bundled with Flutter)
 - Code generation: `build_runner`
 
-### Instalasi
+### Installation
 
 ```bash
-# Clone repository
+# Clone the repository
 git clone https://github.com/username/fitapp.git
 cd fitapp
 
@@ -148,7 +150,7 @@ flutter pub get
 # Generate Drift database code
 dart run build_runner build
 
-# Jalankan di platform pilihan
+# Run on your preferred platform
 flutter run           # Auto-detect device
 flutter run -d ios    # iOS
 flutter run -d android
@@ -156,27 +158,27 @@ flutter run -d chrome # Web
 flutter run -d windows
 ```
 
-### Catatan API
+### API Notes
 
-- **USDA FoodData Central** menggunakan `DEMO_KEY` (terbatas). Untuk penggunaan lebih lanjut, daftar API key gratis di [fdc.nal.usda.gov](https://fdc.nal.usda.gov/).
-- **Open Food Facts** bersifat public, tidak perlu API key.
+- **USDA FoodData Central** uses a `DEMO_KEY` by default (rate-limited). For production use, get a free API key at [fdc.nal.usda.gov](https://fdc.nal.usda.gov/).
+- **Open Food Facts** is a public API — no key required.
 
 ---
 
-## 📁 Struktur Project
+## 📁 Project Structure
 
 ```
 fitapp/
 ├── .github/workflows/   # CI/CD — iOS build workflow
-├── android/             # Platform Android
+├── android/             # Android platform
 ├── assets/              # Logo & assets
-├── docs/                # Dokumentasi feedback user
-├── ios/                 # Platform iOS (deployment target 15.0)
-├── lib/                 # Source code utama
+├── docs/                # User feedback documentation
+├── ios/                 # iOS platform (deployment target 15.0)
+├── lib/                 # Main source code
 ├── prompts/             # Session development plans
 ├── test/                # Unit tests
-├── web/                 # Platform Web (Drift WASM worker)
-├── windows/             # Platform Windows
+├── web/                 # Web platform (Drift WASM worker)
+├── windows/             # Windows platform
 ├── pubspec.yaml
 └── analysis_options.yaml
 ```
@@ -185,7 +187,7 @@ fitapp/
 
 ## 🗺️ Roadmap
 
-### ✅ Tersedia (v1.0.0 – v1.5.0)
+### ✅ Shipped (v1.0.0 – v1.5.0)
 - [x] Dashboard with CalorieRing
 - [x] Food search (USDA API) & barcode scanner (Open Food Facts)
 - [x] GPS outdoor activity tracking (running / cycling)
@@ -194,25 +196,25 @@ fitapp/
 - [x] Route review with pace-colored polyline
 - [x] Local SQLite persistence (Drift)
 
-### 🔜 Rencana Selanjutnya
-- [ ] Sinkronisasi backend (Hono + Bun + PostgreSQL + JWT)
-- [ ] Autentikasi pengguna
+### 🔜 Up Next
+- [ ] Backend sync (Hono + Bun + PostgreSQL + JWT)
+- [ ] User authentication
 - [ ] Cloud backup & restore
 - [ ] Social features (challenges, leaderboard)
-- [ ] Widget iOS & Android
+- [ ] iOS & Android widgets
 - [ ] Apple Watch / Wear OS companion
 - [ ] Dark/light mode toggle
-- [ ] Unit & integration tests coverage
+- [ ] Unit & integration test coverage
 
 ---
 
-## 🤝 Kontribusi
+## 🤝 Contributing
 
-Karena proyek ini bersifat personal, kontribusi eksternal tidak direncanakan saat ini. Namun, jika Anda menemukan bug atau memiliki saran, silakan buka [issue](https://github.com/username/fitapp/issues).
+Since this is a personal project, external contributions are not planned at this time. However, if you find a bug or have a suggestion, feel free to open an [issue](https://github.com/username/fitapp/issues).
 
 ---
 
-## 📄 Lisensi
+## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
