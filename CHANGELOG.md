@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.4.0] - 2026-06-19
+
+### Added
+- **Food Screen**: Custom arc glow nutrition chart (replaces fl_chart pie chart)
+  - `CustomPaint` arc segments with per-segment glow effect
+  - Animated entry with `easeOutCubic` curve
+  - Tap interaction to show detailed gram info per macro in center
+  - Animated legend with active highlight and glow borders
+- **Activity Detail Screen**: Pace checkpoints every 0.5km
+  - Colored pinpoint markers on map (bubble with distance + pace label)
+  - Start (green ▶) and Finish (red ■) markers remain
+- **Activity Detail Screen**: Pace history bar chart list
+  - Horizontal bars per 0.5km segment, colored by pace
+  - Distance label (left) and pace label (right) for each entry
+- **Activity Screen**: Icon-based stats overlay
+  - Icons: timer_outlined, straighten_outlined, speed_outlined, local_fire_department_outlined
+  - Compact value display without units in overlay
+
+### Changed
+- **Food Screen**: Removed `fl_chart` dependency; replaced with custom `CustomPaint` painter (`_NutritionArcPainter`) matching `CalorieRing` visual style
+- **Activity Screen**: Changed "MULAI" button text to "START"
+- **Activity Detail Screen**: Refactored code with `_PaceCheckpoint`, `_PaceHistoryEntry`, `_PaceMarker`, `_PaceHistoryRow` widgets
+- Stats overlay in Activity Screen uses icons instead of uppercase text labels
+
+### Fixed
+- Nutrition chart now properly resets touched index when tapping same segment again (toggle)
+
 ## [1.3.0] - 2026-06-19
 
 ### Added

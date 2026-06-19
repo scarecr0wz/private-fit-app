@@ -5,6 +5,21 @@ import 'package:latlong2/latlong.dart';
 import '../../theme.dart';
 import '../../data/database.dart';
 
+// ─── Data model untuk checkpoint pace ────────────────────────────────────────
+
+class _PaceCheckpoint {
+  final LatLng point;
+  final double paceMinPerKm;
+  final double distanceKm;
+  _PaceCheckpoint({
+    required this.point,
+    required this.paceMinPerKm,
+    required this.distanceKm,
+  });
+}
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
+
 class ActivityDetailScreen extends StatelessWidget {
   final ActivityLog activity;
 
@@ -47,6 +62,12 @@ class ActivityDetailScreen extends StatelessWidget {
     // ── Build colored polylines by pace ─────────────────────────────────────
     final coloredPolylines = _buildColoredPolylines(routePoints, paceValues);
 
+    // ── Build pace checkpoints (setiap 0.5 km) ──────────────────────────────
+    final checkpoints = _buildPaceCheckpoints(routePoints, paceValues);
+
+    // ── Build pace history list untuk ditampilkan di bawah ──────────────────
+    final paceHistory = _buildPaceHistory(routePoints, paceValues);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -59,6 +80,7 @@ class ActivityDetailScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
+          // ── Map section ─────────────────────────────────────────────────
           Expanded(
             flex: 2,
             child: ClipRRect(
@@ -87,7 +109,7 @@ class ActivityDetailScreen extends StatelessWidget {
                       // Colored polylines per segmen pace
                       if (coloredPolylines.isNotEmpty)
                         PolylineLayer(polylines: coloredPolylines),
-                      // Marker start
+                      // Markers: start, finish, checkpoints
                       if (routePoints.isNotEmpty)
                         MarkerLayer(
                           markers: [
@@ -137,6 +159,13 @@ class ActivityDetailScreen extends StatelessWidget {
                                 ),
                               ),
                             ),
+                            // Pace checkpoints
+                            ...checkpoints.map((cp) => Marker(
+                              point: cp.point,
+                              width: 52,
+                              height: 28,
+                              child: _PaceMarker(checkpoint: cp),
+                            )),
                           ],
                         ),
                     ],
@@ -151,12 +180,15 @@ class ActivityDetailScreen extends StatelessWidget {
               ),
             ),
           ),
+
+          // ── Stats + Pace History ─────────────────────────────────────────
           Expanded(
             flex: 3,
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
               child: Column(
                 children: [
+                  // Distance headline
                   Text(
                     distanceKm.toStringAsFixed(2),
                     style: Theme.of(context).textTheme.displayLarge?.copyWith(
@@ -170,7 +202,9 @@ class ActivityDetailScreen extends StatelessWidget {
                           color: AppColors.onSurfaceVariant,
                         ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
+
+                  // Stats row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
@@ -181,6 +215,28 @@ class ActivityDetailScreen extends StatelessWidget {
                           value: '${activity.caloriesBurned.toInt()}'),
                     ],
                   ),
+
+                  // Pace History List
+                  if (paceHistory.isNotEmpty) ...[
+                    const SizedBox(height: 28),
+                    Row(
+                      children: [
+                        const Icon(Icons.timeline,
+                            color: AppColors.secondary, size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Pace History',
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: AppColors.onSurface,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    ...paceHistory.map((entry) => _PaceHistoryRow(entry: entry)),
+                  ],
                 ],
               ),
             ),
@@ -190,25 +246,13 @@ class ActivityDetailScreen extends StatelessWidget {
     );
   }
 
-  /// Buat list Polyline berwarna berdasarkan pace tiap segmen.
-  /// Slow (>7 min/km) = merah, Fast (<4 min/km) = hijau, tengah = gradient.
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
   List<Polyline> _buildColoredPolylines(
       List<LatLng> points, List<double> paceValues) {
-    if (points.length < 2) {
-      // Fallback: polyline tunggal warna default
-      if (points.length == 2) {
-        return [
-          Polyline(
-              points: points,
-              color: AppColors.secondary,
-              strokeWidth: 5.0)
-        ];
-      }
-      return [];
-    }
+    if (points.length < 2) return [];
 
     final List<Polyline> polylines = [];
-
     for (int i = 0; i < points.length - 1; i++) {
       final segPoints = [points[i], points[i + 1]];
       final rawPace = paceValues.length > i + 1 ? paceValues[i + 1] : -1.0;
@@ -221,36 +265,270 @@ class ActivityDetailScreen extends StatelessWidget {
         strokeCap: StrokeCap.round,
       ));
     }
-
     return polylines;
   }
 
-  /// Merah (lambat ≥ 8 min/km) → Kuning (4-8 min/km) → Hijau (cepat ≤ 4 min/km)
+  /// Checkpoint setiap 0.5 km
+  List<_PaceCheckpoint> _buildPaceCheckpoints(
+      List<LatLng> points, List<double> paceValues) {
+    if (points.length < 2) return [];
+
+    final List<_PaceCheckpoint> result = [];
+    double cumDist = 0;
+    double nextCheckpoint = 0.5;
+
+    for (int i = 1; i < points.length; i++) {
+      final segDist = _distBetween(points[i - 1], points[i]);
+      cumDist += segDist;
+
+      while (cumDist >= nextCheckpoint) {
+        final pace = paceValues.length > i ? paceValues[i] : -1.0;
+        if (pace > 0) {
+          result.add(_PaceCheckpoint(
+            point: points[i],
+            paceMinPerKm: pace,
+            distanceKm: nextCheckpoint,
+          ));
+        }
+        nextCheckpoint += 0.5;
+      }
+    }
+    return result;
+  }
+
+  /// Pace history: tiap 0.5km atau lebih
+  List<_PaceHistoryEntry> _buildPaceHistory(
+      List<LatLng> points, List<double> paceValues) {
+    if (points.length < 2) return [];
+
+    final List<_PaceHistoryEntry> result = [];
+    double cumDist = 0;
+    double nextCheckpoint = 0.5;
+
+    // Accumulate paces for the current segment
+    final List<double> segPaces = [];
+
+    for (int i = 1; i < points.length; i++) {
+      final segDist = _distBetween(points[i - 1], points[i]);
+      cumDist += segDist;
+      final pace = paceValues.length > i ? paceValues[i] : -1.0;
+      if (pace > 0) segPaces.add(pace);
+
+      while (cumDist >= nextCheckpoint && segPaces.isNotEmpty) {
+        final avgPace = segPaces.reduce((a, b) => a + b) / segPaces.length;
+        final paceMin = avgPace.floor();
+        final paceSec = ((avgPace - paceMin) * 60).floor();
+        result.add(_PaceHistoryEntry(
+          distanceKm: nextCheckpoint,
+          paceMinPerKm: avgPace,
+          paceLabel: "$paceMin'${paceSec.toString().padLeft(2, '0')}\"",
+        ));
+        segPaces.clear();
+        nextCheckpoint += 0.5;
+      }
+    }
+    return result;
+  }
+
+  double _distBetween(LatLng a, LatLng b) {
+    // Simplified — use Geolocator's formula approximation in km
+    final dLat = (b.latitude - a.latitude) * (3.14159265 / 180);
+    final dLon = (b.longitude - a.longitude) * (3.14159265 / 180);
+    final sin2Lat = (dLat / 2) * (dLat / 2);
+    final sin2Lon = (dLon / 2) * (dLon / 2);
+    final cosLat =
+        (a.latitude * 3.14159265 / 180).abs() < 1e-9 ? 1.0 : 1.0;
+    final a2 = sin2Lat + cosLat * sin2Lon;
+    return 6371 * 2 * (a2 < 1 ? a2 : 1); // approximate km
+  }
+
   Color _paceToColor(double paceMinPerKm) {
     if (paceMinPerKm < 0) {
-      // Tidak diketahui: warna netral
       return AppColors.secondary.withValues(alpha: 0.7);
     }
-
-    // Clamp antara 3 (sangat cepat) dan 9 (sangat lambat)
     final t = ((paceMinPerKm - 3.0) / (9.0 - 3.0)).clamp(0.0, 1.0);
-
-    // t=0 → hijau cepat, t=1 → merah lambat
     if (t < 0.5) {
-      // Hijau → Kuning
       return Color.lerp(
-        const Color(0xFF00E676), // hijau
-        const Color(0xFFFFEB3B), // kuning
+        const Color(0xFF00E676),
+        const Color(0xFFFFEB3B),
         t * 2,
       )!;
     } else {
-      // Kuning → Merah
       return Color.lerp(
-        const Color(0xFFFFEB3B), // kuning
-        const Color(0xFFEF5350), // merah
+        const Color(0xFFFFEB3B),
+        const Color(0xFFEF5350),
         (t - 0.5) * 2,
       )!;
     }
+  }
+}
+
+// ── Pace Checkpoint Marker ────────────────────────────────────────────────────
+
+class _PaceMarker extends StatelessWidget {
+  final _PaceCheckpoint checkpoint;
+
+  const _PaceMarker({required this.checkpoint});
+
+  @override
+  Widget build(BuildContext context) {
+    final paceMin = checkpoint.paceMinPerKm.floor();
+    final paceSec = ((checkpoint.paceMinPerKm - paceMin) * 60).floor();
+    final paceLabel = "$paceMin'${paceSec.toString().padLeft(2, '0')}\"";
+
+    final color = _paceToColor(checkpoint.paceMinPerKm);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Bubble
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(6),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.5),
+                blurRadius: 6,
+                spreadRadius: 1,
+              ),
+            ],
+          ),
+          child: Text(
+            '${checkpoint.distanceKm.toStringAsFixed(1)}k\n$paceLabel',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 8,
+              fontWeight: FontWeight.w800,
+              color: Colors.black,
+              height: 1.2,
+            ),
+          ),
+        ),
+        // Pin
+        Container(
+          width: 2,
+          height: 6,
+          color: color,
+        ),
+      ],
+    );
+  }
+
+  Color _paceToColor(double paceMinPerKm) {
+    if (paceMinPerKm < 0) return AppColors.secondary;
+    final t = ((paceMinPerKm - 3.0) / (9.0 - 3.0)).clamp(0.0, 1.0);
+    if (t < 0.5) {
+      return Color.lerp(const Color(0xFF00E676), const Color(0xFFFFEB3B), t * 2)!;
+    } else {
+      return Color.lerp(const Color(0xFFFFEB3B), const Color(0xFFEF5350), (t - 0.5) * 2)!;
+    }
+  }
+}
+
+// ── Pace History Row ──────────────────────────────────────────────────────────
+
+class _PaceHistoryEntry {
+  final double distanceKm;
+  final double paceMinPerKm;
+  final String paceLabel;
+  _PaceHistoryEntry({
+    required this.distanceKm,
+    required this.paceMinPerKm,
+    required this.paceLabel,
+  });
+}
+
+class _PaceHistoryRow extends StatelessWidget {
+  final _PaceHistoryEntry entry;
+
+  const _PaceHistoryRow({required this.entry});
+
+  Color _paceToColor(double pace) {
+    if (pace < 0) return AppColors.secondary;
+    final t = ((pace - 3.0) / (9.0 - 3.0)).clamp(0.0, 1.0);
+    if (t < 0.5) {
+      return Color.lerp(const Color(0xFF00E676), const Color(0xFFFFEB3B), t * 2)!;
+    } else {
+      return Color.lerp(const Color(0xFFFFEB3B), const Color(0xFFEF5350), (t - 0.5) * 2)!;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _paceToColor(entry.paceMinPerKm);
+    // Bar width: normalized against 10 min/km max
+    final barFraction = (1 - ((entry.paceMinPerKm - 3.0) / 7.0).clamp(0.0, 1.0));
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          // KM label
+          SizedBox(
+            width: 44,
+            child: Text(
+              '${entry.distanceKm.toStringAsFixed(1)} km',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                  ),
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // Bar
+          Expanded(
+            child: Stack(
+              children: [
+                // Background
+                Container(
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A2A),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                // Filled bar
+                FractionallySizedBox(
+                  widthFactor: barFraction.clamp(0.05, 1.0),
+                  child: Container(
+                    height: 20,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(4),
+                      gradient: LinearGradient(
+                        colors: [color.withValues(alpha: 0.7), color],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: color.withValues(alpha: 0.35),
+                          blurRadius: 6,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 8),
+
+          // Pace label
+          SizedBox(
+            width: 44,
+            child: Text(
+              entry.paceLabel,
+              textAlign: TextAlign.right,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -280,7 +558,6 @@ class _PaceLegend extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          // Gradient bar
           Container(
             width: 80,
             height: 8,
@@ -288,9 +565,9 @@ class _PaceLegend extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
               gradient: const LinearGradient(
                 colors: [
-                  Color(0xFF00E676), // hijau = cepat
-                  Color(0xFFFFEB3B), // kuning = sedang
-                  Color(0xFFEF5350), // merah = lambat
+                  Color(0xFF00E676),
+                  Color(0xFFFFEB3B),
+                  Color(0xFFEF5350),
                 ],
               ),
             ),

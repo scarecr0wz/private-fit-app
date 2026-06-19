@@ -237,29 +237,29 @@ class _ActivityScreenState extends State<ActivityScreen> {
                     children: [
                       Expanded(
                         child: _StatItem(
-                          label: 'Duration',
+                          icon: Icons.timer_outlined,
                           value: _formatDuration(_svc.duration),
                         ),
                       ),
                       _buildDivider(),
                       Expanded(
                         child: _StatItem(
-                          label: 'Distance',
-                          value: '${_svc.distanceKm.toStringAsFixed(2)} km',
+                          icon: Icons.straighten_outlined,
+                          value: '${_svc.distanceKm.toStringAsFixed(2)}km',
                         ),
                       ),
                       _buildDivider(),
                       Expanded(
                         child: _StatItem(
-                          label: 'Pace',
+                          icon: Icons.speed_outlined,
                           value: _svc.pace,
                         ),
                       ),
                       _buildDivider(),
                       Expanded(
                         child: _StatItem(
-                          label: 'Calories',
-                          value: '${_svc.calories} kcal',
+                          icon: Icons.local_fire_department_outlined,
+                          value: '${_svc.calories}',
                         ),
                       ),
                     ],
@@ -293,7 +293,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
   Widget _buildActionControls() {
     if (_svc.state == ActivityState.idle) {
       return _Btn3DPrimary(
-        text: 'MULAI',
+        text: 'START',
         icon: Icons.play_arrow,
         width: 176,
         onTap: () => _svc.startActivity(),
@@ -407,22 +407,20 @@ class _GlassOverlay3D extends StatelessWidget {
 }
 
 class _StatItem extends StatelessWidget {
-  final String label;
+  final IconData icon;
   final String value;
 
-  const _StatItem({required this.label, required this.value});
+  const _StatItem({required this.icon, required this.value});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          label.toUpperCase(),
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.onSurfaceVariant.withValues(alpha: 0.7),
-                letterSpacing: 1.5,
-              ),
+        Icon(
+          icon,
+          color: AppColors.onSurfaceVariant.withValues(alpha: 0.6),
+          size: 16,
         ),
         const SizedBox(height: 4),
         Text(

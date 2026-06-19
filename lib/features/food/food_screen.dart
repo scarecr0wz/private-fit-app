@@ -1,8 +1,8 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:dio/dio.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../../theme.dart';
 import '../../data/database.dart';
 import 'food_dummy.dart';
@@ -571,7 +571,7 @@ class _GlassCard extends StatelessWidget {
   }
 }
 
-// ── Nutrition Pie Chart ───────────────────────────────────────────────────────
+// ── Nutrition Pie Chart (3D Glow Arc Style) ───────────────────────────────────
 
 class _NutritionPieChart extends StatefulWidget {
   final double totalCalories;
@@ -590,27 +590,90 @@ class _NutritionPieChart extends StatefulWidget {
   State<_NutritionPieChart> createState() => _NutritionPieChartState();
 }
 
-class _NutritionPieChartState extends State<_NutritionPieChart> {
+class _NutritionPieChartState extends State<_NutritionPieChart>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
   int _touchedIndex = -1;
 
-  static const _proteinColor  = Color(0xFF5EFBD6); // teal/secondary
-  static const _carbsColor    = Color(0xFFC4C0FF); // lavender/primary
-  static const _fatColor      = Color(0xFFFFB4AB); // coral/error-light
+  static const _proteinColor = Color(0xFF5EFBD6);
+  static const _carbsColor   = Color(0xFFC4C0FF);
+  static const _fatColor     = Color(0xFFFFB4AB);
+
+  static const _proteinGlow  = Color(0xFF00C9A7);
+  static const _carbsGlow    = Color(0xFF9B96FF);
+  static const _fatGlow      = Color(0xFFFF7F6E);
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    );
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final total = widget.totalProtein + widget.totalCarbs + widget.totalFat;
     final hasData = total > 0;
 
+    final segments = [
+      _ArcSegment(
+        fraction: hasData ? widget.totalProtein / total : 0,
+        color: _proteinColor,
+        glowColor: _proteinGlow,
+        label: 'P',
+        index: 0,
+      ),
+      _ArcSegment(
+        fraction: hasData ? widget.totalCarbs / total : 0,
+        color: _carbsColor,
+        glowColor: _carbsGlow,
+        label: 'C',
+        index: 1,
+      ),
+      _ArcSegment(
+        fraction: hasData ? widget.totalFat / total : 0,
+        color: _fatColor,
+        glowColor: _fatGlow,
+        label: 'F',
+        index: 2,
+      ),
+    ];
+
     return _GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
+          // ── Header ──────────────────────────────────────────────────────
           Row(
             children: [
-              const Icon(Icons.pie_chart_rounded, color: AppColors.secondary, size: 18),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.secondary.withValues(alpha: 0.15),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.secondary.withValues(alpha: 0.25),
+                      blurRadius: 10,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.local_fire_department_rounded,
+                    color: AppColors.secondary, size: 16),
+              ),
+              const SizedBox(width: 10),
               Text(
                 'Nutrition Today',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -622,64 +685,163 @@ class _NutritionPieChartState extends State<_NutritionPieChart> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.secondary.withValues(alpha: 0.15),
+                  color: AppColors.secondary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(99),
-                  border: Border.all(color: AppColors.secondary.withValues(alpha: 0.3), width: 1),
+                  border: Border.all(
+                      color: AppColors.secondary.withValues(alpha: 0.35), width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.secondary.withValues(alpha: 0.15),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    ),
+                  ],
                 ),
                 child: Text(
                   '${widget.totalCalories.toInt()} kcal',
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: AppColors.secondary,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
+                    shadows: const [
+                      Shadow(color: Color(0x805EFBD6), blurRadius: 8),
+                    ],
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
-          // Chart + Legend
+          // ── Chart + Legend ───────────────────────────────────────────────
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Pie Chart
-              SizedBox(
-                width: 140,
-                height: 140,
-                child: hasData
-                    ? PieChart(
-                        PieChartData(
-                          pieTouchData: PieTouchData(
-                            touchCallback: (event, response) {
-                              setState(() {
-                                if (!event.isInterestedForInteractions ||
-                                    response == null ||
-                                    response.touchedSection == null) {
-                                  _touchedIndex = -1;
-                                  return;
-                                }
-                                _touchedIndex = response.touchedSection!.touchedSectionIndex;
-                              });
-                            },
+              // Animated glow arc chart
+              AnimatedBuilder(
+                animation: _animation,
+                builder: (context, _) {
+                  return GestureDetector(
+                    onTapDown: (details) {
+                      // Hitung sektor mana yang di-tap
+                      final box = context.findRenderObject() as RenderBox?;
+                      if (box == null) return;
+                      final local = box.globalToLocal(details.globalPosition);
+                      const center = Offset(70, 70);
+                      final angle = (math.atan2(
+                            local.dy - center.dy,
+                            local.dx - center.dx,
+                          ) +
+                          math.pi / 2 +
+                          2 * math.pi) %
+                          (2 * math.pi);
+
+                      double cumAngle = 0;
+                      for (int i = 0; i < segments.length; i++) {
+                        cumAngle += segments[i].fraction * 2 * math.pi;
+                        if (angle <= cumAngle) {
+                          setState(() => _touchedIndex = _touchedIndex == i ? -1 : i);
+                          return;
+                        }
+                      }
+                    },
+                    child: Container(
+                      width: 140,
+                      height: 140,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: _touchedIndex >= 0
+                                ? segments[_touchedIndex].glowColor.withValues(alpha: 0.25)
+                                : AppColors.primary.withValues(alpha: 0.12),
+                            blurRadius: 24,
+                            spreadRadius: 4,
                           ),
-                          borderData: FlBorderData(show: false),
-                          sectionsSpace: 3,
-                          centerSpaceRadius: 36,
-                          sections: [
-                            _buildSection(0, 'P', widget.totalProtein, total, _proteinColor),
-                            _buildSection(1, 'C', widget.totalCarbs, total, _carbsColor),
-                            _buildSection(2, 'F', widget.totalFat, total, _fatColor),
-                          ],
-                        ),
-                      )
-                    : Center(
-                        child: Text(
-                          'No data',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ),
+                        ],
                       ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          CustomPaint(
+                            size: const Size(140, 140),
+                            painter: _NutritionArcPainter(
+                              segments: segments,
+                              progress: _animation.value,
+                              touchedIndex: _touchedIndex,
+                            ),
+                          ),
+                          // Center info
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (_touchedIndex >= 0) ...
+                                [
+                                  Text(
+                                    _touchedIndex == 0
+                                        ? '${widget.totalProtein.toStringAsFixed(0)}g'
+                                        : _touchedIndex == 1
+                                            ? '${widget.totalCarbs.toStringAsFixed(0)}g'
+                                            : '${widget.totalFat.toStringAsFixed(0)}g',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                      color: segments[_touchedIndex].color,
+                                      shadows: [
+                                        Shadow(
+                                          color: segments[_touchedIndex]
+                                              .glowColor
+                                              .withValues(alpha: 0.8),
+                                          blurRadius: 14,
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                  Text(
+                                    segments[_touchedIndex].label == 'P'
+                                        ? 'Protein'
+                                        : segments[_touchedIndex].label == 'C'
+                                            ? 'Karbo'
+                                            : 'Lemak',
+                                    style: const TextStyle(
+                                      fontSize: 9,
+                                      color: Colors.white54,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ]
+                              else ...
+                                [
+                                  Text(
+                                    hasData ? '${(total).toStringAsFixed(0)}g' : '--',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                      shadows: [
+                                        Shadow(
+                                          color: Color(0x60C4C0FF),
+                                          blurRadius: 12,
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                  const Text(
+                                    'total',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      color: Colors.white38,
+                                    ),
+                                  ),
+                                ],
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
+
               const SizedBox(width: 20),
 
               // Legend
@@ -690,23 +852,29 @@ class _NutritionPieChartState extends State<_NutritionPieChart> {
                   children: [
                     _LegendItem(
                       color: _proteinColor,
+                      glowColor: _proteinGlow,
                       label: 'Protein',
                       value: '${widget.totalProtein.toStringAsFixed(1)} g',
                       percent: hasData ? (widget.totalProtein / total * 100).round() : 0,
+                      isActive: _touchedIndex == 0,
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     _LegendItem(
                       color: _carbsColor,
+                      glowColor: _carbsGlow,
                       label: 'Karbo',
                       value: '${widget.totalCarbs.toStringAsFixed(1)} g',
                       percent: hasData ? (widget.totalCarbs / total * 100).round() : 0,
+                      isActive: _touchedIndex == 1,
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     _LegendItem(
                       color: _fatColor,
+                      glowColor: _fatGlow,
                       label: 'Lemak',
                       value: '${widget.totalFat.toStringAsFixed(1)} g',
                       percent: hasData ? (widget.totalFat / total * 100).round() : 0,
+                      isActive: _touchedIndex == 2,
                     ),
                   ],
                 ),
@@ -717,73 +885,189 @@ class _NutritionPieChartState extends State<_NutritionPieChart> {
       ),
     );
   }
+}
 
-  PieChartSectionData _buildSection(
-      int index, String title, double value, double total, Color color) {
-    final isTouched = index == _touchedIndex;
-    final pct = total > 0 ? value / total * 100 : 0.0;
-    return PieChartSectionData(
-      color: color,
-      value: value > 0 ? value : 0.001,
-      title: isTouched ? '${pct.round()}%' : '',
-      radius: isTouched ? 40 : 32,
-      titleStyle: const TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.bold,
-        color: Colors.white,
-        shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
-      ),
-    );
+// Custom painter untuk arc glow (mirip CalorieRing tapi multi-segment)
+class _NutritionArcPainter extends CustomPainter {
+  final List<_ArcSegment> segments;
+  final double progress;
+  final int touchedIndex;
+
+  const _NutritionArcPainter({
+    required this.segments,
+    required this.progress,
+    required this.touchedIndex,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 14;
+    const strokeWidth = 11.0;
+    const gapAngle = 0.04; // gap antar segmen
+    const startAngle = -math.pi / 2;
+
+    // Background track
+    final bgPaint = Paint()
+      ..color = const Color(0xFF1A1A2A)
+      ..strokeWidth = strokeWidth + 2
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawCircle(center, radius, bgPaint);
+
+    double currentAngle = startAngle;
+    for (int i = 0; i < segments.length; i++) {
+      final seg = segments[i];
+      if (seg.fraction <= 0) continue;
+
+      final totalForSeg = seg.fraction * 2 * math.pi * progress;
+      final sweepAngle = (totalForSeg - gapAngle).clamp(0.0, double.infinity);
+      if (sweepAngle <= 0) {
+        currentAngle += totalForSeg;
+        continue;
+      }
+
+      final rect = Rect.fromCircle(center: center, radius: radius);
+      final isTouched = i == touchedIndex;
+      final sw = isTouched ? strokeWidth + 4 : strokeWidth;
+
+      // Glow layer
+      final glowPaint = Paint()
+        ..color = seg.glowColor.withValues(alpha: isTouched ? 0.55 : 0.30)
+        ..strokeWidth = sw + 6
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+      canvas.drawArc(rect, currentAngle, sweepAngle, false, glowPaint);
+
+      // Crisp colored arc
+      final arcPaint = Paint()
+        ..shader = LinearGradient(
+          colors: [seg.color.withValues(alpha: 0.85), seg.color],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ).createShader(rect)
+        ..strokeWidth = sw
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+      canvas.drawArc(rect, currentAngle, sweepAngle, false, arcPaint);
+
+      currentAngle += totalForSeg;
+    }
   }
+
+  @override
+  bool shouldRepaint(_NutritionArcPainter old) =>
+      old.progress != progress ||
+      old.touchedIndex != touchedIndex ||
+      old.segments != segments;
+}
+
+class _ArcSegment {
+  final double fraction;
+  final Color color;
+  final Color glowColor;
+  final String label;
+  final int index;
+  const _ArcSegment({
+    required this.fraction,
+    required this.color,
+    required this.glowColor,
+    required this.label,
+    required this.index,
+  });
 }
 
 class _LegendItem extends StatelessWidget {
   final Color color;
+  final Color glowColor;
   final String label;
   final String value;
   final int percent;
+  final bool isActive;
 
   const _LegendItem({
     required this.color,
+    required this.glowColor,
     required this.label,
     required this.value,
     required this.percent,
+    this.isActive = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: EdgeInsets.symmetric(
+        horizontal: isActive ? 10 : 8,
+        vertical: isActive ? 6 : 4,
+      ),
+      decoration: BoxDecoration(
+        color: isActive ? color.withValues(alpha: 0.10) : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isActive ? color.withValues(alpha: 0.35) : Colors.transparent,
+          width: 1,
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.onSurfaceVariant,
+        boxShadow: isActive
+            ? [
+                BoxShadow(
+                  color: glowColor.withValues(alpha: 0.20),
+                  blurRadius: 10,
+                  spreadRadius: 1,
+                ),
+              ]
+            : null,
+      ),
+      child: Row(
+        children: [
+          // Dot with glow
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: glowColor.withValues(alpha: isActive ? 0.7 : 0.3),
+                  blurRadius: isActive ? 8 : 4,
+                  spreadRadius: isActive ? 1 : 0,
+                ),
+              ],
             ),
           ),
-        ),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: AppColors.onSurface,
-            fontWeight: FontWeight.w600,
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: isActive ? color : AppColors.onSurfaceVariant,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.normal,
+              ),
+            ),
           ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          '$percent%',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: color,
-            fontWeight: FontWeight.w700,
+          Text(
+            value,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: isActive ? color : AppColors.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-      ],
+          const SizedBox(width: 6),
+          Text(
+            '$percent%',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w800,
+              shadows: isActive
+                  ? [Shadow(color: glowColor.withValues(alpha: 0.6), blurRadius: 6)]
+                  : null,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
