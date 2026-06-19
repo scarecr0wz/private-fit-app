@@ -133,9 +133,9 @@ class _StatsScreenState extends State<StatsScreen> {
                               final List<Map<String, dynamic>> combined = [];
                               
                               for (final a in activities) {
-                                String label = 'Aktivitas';
-                                if (a.type == 'run') label = 'Lari';
-                                if (a.type == 'bike') label = 'Bersepeda';
+                                String label = 'Activity';
+                                if (a.type == 'run') label = 'Run';
+                                if (a.type == 'bike') label = 'Bike';
                                 
                                 String detail = '${a.durationSeconds ~/ 60} min';
                                 if (a.distanceMeters > 0) {
@@ -402,13 +402,13 @@ class _StatsScreenState extends State<StatsScreen> {
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
                         const List<String> days = [
-                          'Sen',
-                          'Sel',
-                          'Rab',
-                          'Kam',
-                          'Jum',
-                          'Sab',
-                          'Min'
+                          'Mon',
+                          'Tue',
+                          'Wed',
+                          'Thu',
+                          'Fri',
+                          'Sat',
+                          'Sun'
                         ];
                         if (value >= 0 && value < days.length) {
                           return Padding(

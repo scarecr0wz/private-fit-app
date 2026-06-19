@@ -12,7 +12,7 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final todayStr = DateFormat('EEEE, d MMMM', 'id_ID').format(DateTime.now());
+    final todayStr = DateFormat('EEEE, d MMMM').format(DateTime.now());
     final now = DateTime.now();
     final startOfDay = DateTime(now.year, now.month, now.day);
     final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
