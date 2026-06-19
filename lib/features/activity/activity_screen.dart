@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../theme.dart';
+import '../../data/database.dart';
 
 enum ActivityState { idle, running, paused }
 
@@ -18,6 +21,7 @@ class ActivityScreen extends StatefulWidget {
 class _ActivityScreenState extends State<ActivityScreen> {
   ActivityState _state = ActivityState.idle;
   Timer? _timer;
+  StreamSubscription<Position>? _positionStreamSubscription;
 
   Duration _duration = Duration.zero;
   double _distanceKm = 0.0;
@@ -29,33 +33,104 @@ class _ActivityScreenState extends State<ActivityScreen> {
   final MapController _mapController = MapController();
 
   @override
+  void initState() {
+    super.initState();
+    _initLocation();
+  }
+
+  Future<void> _initLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return;
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return;
+    }
+
+    if (permission == LocationPermission.deniedForever) return;
+
+    try {
+      Position position = await Geolocator.getCurrentPosition();
+      setState(() {
+        _currentLocation = LatLng(position.latitude, position.longitude);
+        _mapController.move(_currentLocation, 16.0);
+      });
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  @override
   void dispose() {
     _timer?.cancel();
+    _positionStreamSubscription?.cancel();
     _mapController.dispose();
     super.dispose();
   }
 
-  void _startActivity() {
+  Future<void> _startActivity() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return;
+    }
+    if (permission == LocationPermission.deniedForever) return;
+
     setState(() {
       _state = ActivityState.running;
       if (_routePoints.isEmpty) {
         _routePoints.add(_currentLocation);
       }
     });
+
+    _startTimerAndStream();
+  }
+
+  void _startTimerAndStream() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
         _duration += const Duration(seconds: 1);
-        _distanceKm += 0.002;
-        _calories += 1;
-        _pace = "5'30\"";
-
-        _currentLocation = LatLng(
-          _currentLocation.latitude + 0.00005,
-          _currentLocation.longitude + 0.00005,
-        );
-        _routePoints.add(_currentLocation);
-        _mapController.move(_currentLocation, _mapController.camera.zoom);
+        if (_distanceKm > 0) {
+          final minutes = _duration.inSeconds / 60.0;
+          final paceValue = minutes / _distanceKm;
+          final paceMinutes = paceValue.floor();
+          final paceSeconds = ((paceValue - paceMinutes) * 60).floor();
+          _pace = "$paceMinutes'${paceSeconds.toString().padLeft(2, '0')}\"";
+        }
       });
+    });
+
+    _positionStreamSubscription ??= Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 2,
+      ),
+    ).listen((Position position) {
+      if (_state == ActivityState.running) {
+        setState(() {
+          final newLocation = LatLng(position.latitude, position.longitude);
+
+          if (_routePoints.isNotEmpty) {
+            final lastPoint = _routePoints.last;
+            final distanceMeters = Geolocator.distanceBetween(
+              lastPoint.latitude,
+              lastPoint.longitude,
+              newLocation.latitude,
+              newLocation.longitude,
+            );
+            _distanceKm += distanceMeters / 1000.0;
+            _calories = (_distanceKm * 60).round();
+          }
+
+          _currentLocation = newLocation;
+          _routePoints.add(_currentLocation);
+          _mapController.move(_currentLocation, _mapController.camera.zoom);
+        });
+      }
     });
   }
 
@@ -67,10 +142,30 @@ class _ActivityScreenState extends State<ActivityScreen> {
   }
 
   void _resumeActivity() {
-    _startActivity();
+    setState(() {
+      _state = ActivityState.running;
+    });
+    _startTimerAndStream();
   }
 
-  void _stopActivity() {
+  Future<void> _stopActivity() async {
+    if (_routePoints.isNotEmpty) {
+      final routeJson = jsonEncode(
+        _routePoints.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList(),
+      );
+
+      await db.into(db.activityLogs).insert(
+        ActivityLogsCompanion.insert(
+          type: 'Outdoor Run',
+          date: DateTime.now(),
+          durationSeconds: _duration.inSeconds,
+          distanceMeters: _distanceKm * 1000,
+          caloriesBurned: _calories.toDouble(),
+          routePoints: routeJson,
+        ),
+      );
+    }
+
     setState(() {
       _state = ActivityState.idle;
       _duration = Duration.zero;
@@ -78,10 +173,10 @@ class _ActivityScreenState extends State<ActivityScreen> {
       _calories = 0;
       _pace = "0'00\"";
       _routePoints.clear();
-      _currentLocation = const LatLng(-6.200000, 106.816666);
-      _mapController.move(_currentLocation, 16.0);
     });
     _timer?.cancel();
+    _positionStreamSubscription?.cancel();
+    _positionStreamSubscription = null;
   }
 
   String _formatDuration(Duration d) {

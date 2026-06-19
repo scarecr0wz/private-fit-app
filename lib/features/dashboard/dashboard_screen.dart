@@ -1,37 +1,99 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:drift/drift.dart' hide Column;
 import '../../theme.dart';
 import '../../shared/widgets/calorie_ring.dart';
 import 'dashboard_dummy.dart';
+import '../../data/database.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    const summary = dummySummary;
-    final today = DateFormat('EEEE, d MMMM', 'id_ID').format(DateTime.now());
+    final todayStr = DateFormat('EEEE, d MMMM', 'id_ID').format(DateTime.now());
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          // Radial background gradient (3D depth effect)
-          const Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(0, -0.9),
-                  radius: 1.0,
-                  colors: [
-                    Color(0xFF1E1E3E),
-                    AppColors.background,
-                  ],
-                  stops: [0.0, 1.0],
-                ),
-              ),
-            ),
-          ),
+      body: StreamBuilder<List<FoodLog>>(
+        stream: (db.select(db.foodLogs)
+              ..where((t) => t.date.isBetweenValues(startOfDay, endOfDay))
+              ..orderBy([(t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc)]))
+            .watch(),
+        builder: (context, foodSnapshot) {
+          return StreamBuilder<List<ActivityLog>>(
+            stream: (db.select(db.activityLogs)
+                  ..where((t) => t.date.isBetweenValues(startOfDay, endOfDay))
+                  ..orderBy([(t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc)]))
+                .watch(),
+            builder: (context, activitySnapshot) {
+              final foods = foodSnapshot.data ?? [];
+              final activities = activitySnapshot.data ?? [];
+
+              int caloriesIn = 0;
+              for (final f in foods) {
+                caloriesIn += f.calories.toInt();
+              }
+
+              int caloriesOut = 0;
+              for (final a in activities) {
+                caloriesOut += a.caloriesBurned.toInt();
+              }
+
+              final meals = foods.map((f) => MealItem(
+                    name: f.foodName,
+                    time: DateFormat('HH:mm').format(f.date),
+                    calories: f.calories.toInt(),
+                  )).toList();
+
+              final activityItems = activities.map((a) {
+                String label = 'Aktivitas';
+                if (a.type == 'run') label = 'Lari';
+                if (a.type == 'bike') label = 'Bersepeda';
+                if (a.type == 'gym') label = 'Latihan Beban';
+
+                String detail = '${a.durationSeconds ~/ 60} min';
+                if (a.distanceMeters > 0) {
+                  detail = '${(a.distanceMeters / 1000).toStringAsFixed(1)} km - $detail';
+                }
+
+                return ActivityItem(
+                  type: a.type,
+                  label: label,
+                  detail: detail,
+                  caloriesBurned: a.caloriesBurned.toInt(),
+                );
+              }).toList();
+
+              final summary = DailySummary(
+                caloriesIn: caloriesIn,
+                caloriesOut: caloriesOut,
+                calorieGoal: 2000,
+                activities: activityItems,
+                meals: meals,
+              );
+
+              return Stack(
+                children: [
+                  // Radial background gradient (3D depth effect)
+                  const Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: Alignment(0, -0.9),
+                          radius: 1.0,
+                          colors: [
+                            Color(0xFF1E1E3E),
+                            AppColors.background,
+                          ],
+                          stops: [0.0, 1.0],
+                        ),
+                      ),
+                    ),
+                  ),
 
           CustomScrollView(
             slivers: [
@@ -123,7 +185,7 @@ class DashboardScreen extends StatelessWidget {
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     // Greeting
-                    _buildGreeting(context, today),
+                    _buildGreeting(context, todayStr),
                     const SizedBox(height: 28),
 
                     // Calorie Ring + Pill Stats
@@ -153,11 +215,15 @@ class DashboardScreen extends StatelessWidget {
             child: _Fab3D(),
           ),
         ],
+      );
+      },
+      ),
+      },
       ),
     );
   }
 
-  Widget _buildGreeting(BuildContext context, String today) {
+  Widget _buildGreeting(BuildContext context, String todayStr) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -175,7 +241,7 @@ class DashboardScreen extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          today,
+          todayStr,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
               ),

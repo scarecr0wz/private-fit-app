@@ -1,5 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:dio/dio.dart';
 import '../../theme.dart';
+import '../../data/database.dart';
 import 'food_dummy.dart';
 
 class FoodScreen extends StatefulWidget {
@@ -13,6 +17,7 @@ class _FoodScreenState extends State<FoodScreen> {
   final _searchController = TextEditingController();
   List<FoodItem> _results = [];
   bool _hasSearched = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -20,15 +25,92 @@ class _FoodScreenState extends State<FoodScreen> {
     super.dispose();
   }
 
+  Timer? _debounce;
+
   void _onSearch(String q) {
-    setState(() {
-      _hasSearched = q.isNotEmpty;
-      _results = q.isEmpty
-          ? []
-          : dummyFoodDb
-              .where((f) => f.name.toLowerCase().contains(q.toLowerCase()))
-              .toList();
+    if (q.isEmpty) {
+      setState(() {
+        _hasSearched = false;
+        _results = [];
+      });
+      return;
+    }
+
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _fetchUSDA(q);
     });
+  }
+
+  Future<void> _fetchUSDA(String query) async {
+    setState(() {
+      _isLoading = true;
+      _hasSearched = true;
+      _results = [];
+    });
+
+    try {
+      final dio = Dio();
+      final response = await dio.get(
+        'https://api.nal.usda.gov/fdc/v1/foods/search',
+        queryParameters: {
+          'query': query,
+          'api_key': 'DEMO_KEY',
+          'pageSize': 10,
+        },
+      );
+
+      final List foods = response.data['foods'] ?? [];
+      final List<FoodItem> parsedResults = [];
+
+      for (var food in foods) {
+        final description = food['description'] ?? 'Unknown';
+        final nutrients = food['foodNutrients'] as List? ?? [];
+        
+        double energy = 0;
+        double protein = 0;
+        double carbs = 0;
+        double fat = 0;
+
+        for (var n in nutrients) {
+          final name = (n['nutrientName'] ?? '').toString().toLowerCase();
+          final value = (n['value'] ?? 0).toDouble();
+          
+          if (name.contains('energy')) {
+            energy = value;
+          } else if (name.contains('protein')) {
+            protein = value;
+          } else if (name.contains('carbohydrate')) {
+            carbs = value;
+          } else if (name.contains('lipid') || name.contains('fat')) {
+            fat = value;
+          }
+        }
+
+        parsedResults.add(FoodItem(
+          id: food['fdcId'].toString(),
+          name: description,
+          caloriesPer100g: energy.toInt(),
+          protein: protein,
+          carbs: carbs,
+          fat: fat,
+        ));
+      }
+
+      if (mounted) {
+        setState(() {
+          _results = parsedResults;
+        });
+      }
+    } catch (e) {
+      _showError('Gagal mencari makanan: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void _onSelect(FoodItem food) {
@@ -37,6 +119,80 @@ class _FoodScreenState extends State<FoodScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _AddFoodSheet3D(food: food),
+    );
+  }
+
+  Future<void> _scanBarcode() async {
+    final barcode = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _ScannerSheet(),
+    );
+
+    if (barcode != null) {
+      _fetchProduct(barcode);
+    }
+  }
+
+  Future<void> _fetchProduct(String barcode) async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final dio = Dio();
+      final response = await dio.get(
+        'https://world.openfoodfacts.org/api/v3/product/$barcode.json',
+      );
+      if (response.data['status'] == 'success') {
+        final product = response.data['product'];
+        final nutriments = product['nutriments'] ?? {};
+        
+        final name = product['product_name'] ?? 'Unknown Product';
+        final energy = (nutriments['energy-kcal_100g'] ?? 0).toDouble();
+        final proteins = (nutriments['proteins_100g'] ?? 0).toDouble();
+        final carbs = (nutriments['carbohydrates_100g'] ?? 0).toDouble();
+        final fat = (nutriments['fat_100g'] ?? 0).toDouble();
+
+        final foodItem = FoodItem(
+          id: barcode,
+          name: name,
+          caloriesPer100g: energy.toInt(),
+          protein: proteins,
+          carbs: carbs,
+          fat: fat,
+        );
+
+        setState(() {
+          _hasSearched = true;
+          _results = [foodItem];
+        });
+      } else {
+        _showError('Produk tidak ditemukan');
+      }
+    } catch (e) {
+      _showError('Produk tidak ditemukan');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
     );
   }
 
@@ -64,11 +220,17 @@ class _FoodScreenState extends State<FoodScreen> {
               _buildAppBar(context),
               _buildSearchBar(context),
               Expanded(
-                child: _hasSearched && _results.isEmpty
-                    ? _buildNoResults(context)
-                    : !_hasSearched
-                        ? _buildEmptyState(context)
-                        : _buildResultsList(context),
+                child: _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.secondary,
+                        ),
+                      )
+                    : _hasSearched && _results.isEmpty
+                        ? _buildNoResults(context)
+                        : !_hasSearched
+                            ? _buildEmptyState(context)
+                            : _buildResultsList(context),
               ),
             ],
           ),
@@ -186,19 +348,7 @@ class _FoodScreenState extends State<FoodScreen> {
               ),
             ),
             GestureDetector(
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text(
-                        'Barcode scanner — akan aktif di session 7'),
-                    backgroundColor: AppColors.surfaceContainerHigh,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                );
-              },
+              onTap: _scanBarcode,
               child: const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 14),
                 child: Icon(Icons.barcode_reader,
@@ -614,13 +764,26 @@ class _AddFoodSheet3DState extends State<_AddFoodSheet3D> {
           // 3D CTA button
           _Btn3DPrimary(
             label: 'Tambah ke Log',
-            onTap: () {
+            onTap: () async {
+              // Save to SQLite
+              await db.into(db.foodLogs).insert(
+                FoodLogsCompanion.insert(
+                  date: DateTime.now(),
+                  foodName: widget.food.name,
+                  grams: _grams,
+                  calories: _calories.toDouble(),
+                  protein: (widget.food.protein * _grams / 100),
+                  carbs: (widget.food.carbs * _grams / 100),
+                  fat: (widget.food.fat * _grams / 100),
+                ),
+              );
+
+              if (!context.mounted) return;
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(
-                      '${widget.food.name} ditambahkan ($_calories kcal)'),
-                  backgroundColor: AppColors.surfaceContainerHigh,
+                  content: Text('${widget.food.name} disimpan ke Database ($_calories kcal)'),
+                  backgroundColor: AppColors.secondary,
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -768,6 +931,99 @@ class _Btn3DPrimaryState extends State<_Btn3DPrimary> {
                 ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── Scanner Sheet ─────────────────────────────────────────────────────────────
+
+class _ScannerSheet extends StatefulWidget {
+  const _ScannerSheet();
+
+  @override
+  State<_ScannerSheet> createState() => _ScannerSheetState();
+}
+
+class _ScannerSheetState extends State<_ScannerSheet> {
+  final MobileScannerController _controller = MobileScannerController();
+  bool _isScanned = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.7,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.10),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          // Grabber
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 20),
+              width: 32,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.outlineVariant,
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Scan Barcode',
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineMedium
+                      ?.copyWith(color: AppColors.onSurface),
+                ),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Icon(Icons.close,
+                      color: AppColors.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
+              child: MobileScanner(
+                controller: _controller,
+                onDetect: (capture) {
+                  if (_isScanned) return;
+                  final List<Barcode> barcodes = capture.barcodes;
+                  if (barcodes.isNotEmpty) {
+                    final String? code = barcodes.first.rawValue;
+                    if (code != null) {
+                      _isScanned = true;
+                      Navigator.pop(context, code);
+                    }
+                  }
+                },
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

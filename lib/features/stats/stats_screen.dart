@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../../data/database.dart';
 
 import '../../theme.dart';
 
@@ -30,26 +31,7 @@ class _StatsScreenState extends State<StatsScreen> {
 
   final List<double> _dummyCalories = [400, 550, 300, 650, 420, 700, 580];
 
-  final List<_DummyHistoryItem> _dummyHistory = [
-    _DummyHistoryItem(
-      label: 'Lari Pagi',
-      detail: '5.2 km - 32 min',
-      calories: 320,
-      type: 'run',
-    ),
-    _DummyHistoryItem(
-      label: 'Angkat Beban',
-      detail: 'Upper Body - 45 min',
-      calories: 280,
-      type: 'gym',
-    ),
-    _DummyHistoryItem(
-      label: 'Bersepeda',
-      detail: '12 km - 40 min',
-      calories: 410,
-      type: 'bike',
-    ),
-  ];
+  // dummy data removed
 
   @override
   Widget build(BuildContext context) {
@@ -170,7 +152,95 @@ class _StatsScreenState extends State<StatsScreen> {
                             ),
                       ),
                       const SizedBox(height: 16),
-                      ..._buildHistoryCards(context),
+                      StreamBuilder<List<ActivityLog>>(
+                        stream: db.select(db.activityLogs).watch(),
+                        builder: (context, snapshot) {
+                          final activities = snapshot.data ?? [];
+                          if (activities.isEmpty) {
+                            return const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(20.0),
+                                child: Text('Belum ada aktivitas', style: TextStyle(color: Colors.white54)),
+                              ),
+                            );
+                          }
+                          return Column(
+                            children: activities.map((a) {
+                              String label = 'Aktivitas';
+                              if (a.type == 'run') label = 'Lari';
+                              if (a.type == 'bike') label = 'Bersepeda';
+                              if (a.type == 'gym') label = 'Latihan Beban';
+
+                              String detail = '${a.durationSeconds ~/ 60} min';
+                              if (a.distanceMeters > 0) {
+                                detail = '${(a.distanceMeters / 1000).toStringAsFixed(1)} km - $detail';
+                              }
+
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12.0),
+                                child: _GlassCard(
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 48,
+                                        height: 48,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.surfaceContainerHigh,
+                                          borderRadius: BorderRadius.circular(16),
+                                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                                        ),
+                                        child: Icon(
+                                          a.type == 'run' ? Icons.directions_run : (a.type == 'bike' ? Icons.directions_bike : Icons.fitness_center),
+                                          color: AppColors.secondary,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              label,
+                                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                                    color: AppColors.onSurface,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                            ),
+                                            Text(
+                                              detail,
+                                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                    color: AppColors.onSurfaceVariant,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            '${a.caloriesBurned.toInt()}',
+                                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                                  color: AppColors.secondary,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                          ),
+                                          Text(
+                                            'kcal',
+                                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                                  color: AppColors.onSurfaceVariant,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          );
+                        },
+                      ),
                       const SizedBox(height: 100),
                     ],
                   ),

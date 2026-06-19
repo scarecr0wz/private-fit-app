@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:drift/drift.dart' as drift;
+import '../../data/database.dart';
 import '../../theme.dart';
-import 'gym_dummy.dart';
+import 'gym_dummy.dart' as dummy;
 
 class GymScreen extends StatefulWidget {
   const GymScreen({super.key});
@@ -10,20 +12,106 @@ class GymScreen extends StatefulWidget {
 }
 
 class _GymScreenState extends State<GymScreen> {
-  void _openAddSetSheet() {
+  bool _isWorkoutActive = false;
+  DateTime? _startTime;
+  List<dummy.Exercise> _activeExercises = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _resetWorkout();
+  }
+
+  void _resetWorkout() {
+    _isWorkoutActive = false;
+    _startTime = null;
+    _activeExercises = dummy.dummyActiveWorkout.map((e) => dummy.Exercise(
+      id: e.id,
+      name: e.name,
+      sets: [],
+    )).toList();
+  }
+
+  void _startWorkout() {
+    setState(() {
+      _isWorkoutActive = true;
+      _startTime = DateTime.now();
+    });
+  }
+
+  void _openAddSetSheet(int exerciseIndex) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const _AddSetSheet3D(),
+      builder: (_) => _AddSetSheet3D(
+        onAddSet: (weight, reps) {
+          setState(() {
+            final ex = _activeExercises[exerciseIndex];
+            final newSet = dummy.WorkoutSet(
+              id: DateTime.now().millisecondsSinceEpoch.toString(),
+              weight: weight,
+              reps: reps,
+              completed: true,
+            );
+            _activeExercises[exerciseIndex] = dummy.Exercise(
+              id: ex.id,
+              name: ex.name,
+              sets: [...ex.sets, newSet],
+            );
+          });
+        },
+      ),
     );
+  }
+
+  Future<void> _finishWorkout() async {
+    if (_startTime == null) return;
+    
+    int durationMinutes = DateTime.now().difference(_startTime!).inMinutes;
+    double totalVolume = 0;
+    List<WorkoutSetsCompanion> setsToInsert = [];
+    
+    for (var ex in _activeExercises) {
+      for (var s in ex.sets) {
+        totalVolume += (s.weight * s.reps);
+        setsToInsert.add(WorkoutSetsCompanion.insert(
+          workoutLogId: 0, // placeholder
+          exerciseName: ex.name,
+          reps: s.reps,
+          weightKg: s.weight,
+        ));
+      }
+    }
+    
+    await db.transaction(() async {
+      final logId = await db.into(db.workoutLogs).insert(WorkoutLogsCompanion.insert(
+        date: DateTime.now(),
+        templateName: 'Push Day',
+        durationMinutes: durationMinutes,
+        totalVolumeKg: totalVolume,
+      ));
+      
+      for (var s in setsToInsert) {
+        await db.into(db.workoutSets).insert(s.copyWith(workoutLogId: drift.Value(logId)));
+      }
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Workout saved successfully!')),
+      );
+      setState(() {
+        _resetWorkout();
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      floatingActionButton: const _Fab3D(),
+      floatingActionButton: !_isWorkoutActive ? _Fab3D(onTap: _startWorkout) : null,
       body: Stack(
         children: [
           // Radial background gradient
@@ -52,12 +140,17 @@ class _GymScreenState extends State<GymScreen> {
                   child: ListView(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     children: [
-                      ...dummyActiveWorkout.map((exercise) => _ExerciseCard(
-                            exercise: exercise,
-                            onAddSet: _openAddSetSheet,
+                      ..._activeExercises.asMap().entries.map((e) => _ExerciseCard(
+                            exercise: e.value,
+                            onAddSet: () => _openAddSetSheet(e.key),
                           )),
                       const SizedBox(height: 16),
-                      const _MotivationalBento(),
+                      if (!_isWorkoutActive) const _MotivationalBento(),
+                      if (_isWorkoutActive)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16.0),
+                          child: _FinishButton3D(onTap: _finishWorkout),
+                        ),
                       const SizedBox(height: 100), // padding for FAB
                     ],
                   ),
@@ -127,10 +220,10 @@ class _GymScreenState extends State<GymScreen> {
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         scrollDirection: Axis.horizontal,
-        itemCount: dummyTemplates.length,
+        itemCount: dummy.dummyTemplates.length,
         separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
-          final template = dummyTemplates[index];
+          final template = dummy.dummyTemplates[index];
           final isActive = template.name == 'Push Day';
           if (isActive) {
             return _ActiveChip3D(label: template.name);
@@ -246,7 +339,7 @@ class _GlassCard extends StatelessWidget {
 }
 
 class _ExerciseCard extends StatelessWidget {
-  final Exercise exercise;
+  final dummy.Exercise exercise;
   final VoidCallback onAddSet;
 
   const _ExerciseCard({
@@ -431,7 +524,8 @@ class _MotivationalBento extends StatelessWidget {
 }
 
 class _Fab3D extends StatefulWidget {
-  const _Fab3D();
+  final VoidCallback onTap;
+  const _Fab3D({required this.onTap});
 
   @override
   State<_Fab3D> createState() => _Fab3DState();
@@ -446,7 +540,7 @@ class _Fab3DState extends State<_Fab3D> {
       onTapDown: (_) => setState(() => _pressed = true),
       onTapUp: (_) => setState(() => _pressed = false),
       onTapCancel: () => setState(() => _pressed = false),
-      onTap: () {},
+      onTap: widget.onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 100),
         transform: Matrix4.translationValues(0, _pressed ? 2 : 0, 0),
@@ -501,7 +595,8 @@ class _Fab3DState extends State<_Fab3D> {
 }
 
 class _AddSetSheet3D extends StatefulWidget {
-  const _AddSetSheet3D();
+  final void Function(double weight, int reps) onAddSet;
+  const _AddSetSheet3D({required this.onAddSet});
 
   @override
   State<_AddSetSheet3D> createState() => _AddSetSheet3DState();
@@ -595,9 +690,12 @@ class _AddSetSheet3DState extends State<_AddSetSheet3D> {
                 ),
                 elevation: 0,
               ),
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                widget.onAddSet(_weight, _reps);
+                Navigator.pop(context);
+              },
               child: const Text(
-                'Start Rest Timer',
+                'Add Set',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -659,6 +757,77 @@ class _AddSetSheet3DState extends State<_AddSetSheet3D> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _FinishButton3D extends StatefulWidget {
+  final VoidCallback onTap;
+  const _FinishButton3D({required this.onTap});
+
+  @override
+  State<_FinishButton3D> createState() => _FinishButton3DState();
+}
+
+class _FinishButton3DState extends State<_FinishButton3D> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: widget.onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 100),
+        transform: Matrix4.translationValues(0, _pressed ? 2 : 0, 0),
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFFFB4AB), AppColors.error, Color(0xFF93000A)],
+            stops: [0.0, 0.5, 1.0],
+          ),
+          boxShadow: _pressed
+              ? [
+                  const BoxShadow(
+                    color: Color(0xFF93000A),
+                    offset: Offset(0, 2),
+                    blurRadius: 0,
+                  ),
+                ]
+              : [
+                  const BoxShadow(
+                    color: Color(0xFF93000A),
+                    offset: Offset(0, 4),
+                    blurRadius: 0,
+                  ),
+                  BoxShadow(
+                    color: AppColors.error.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.4),
+            width: 1,
+          ),
+        ),
+        child: const Center(
+          child: Text(
+            'Selesaikan Latihan',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
