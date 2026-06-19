@@ -7,10 +7,15 @@ import 'features/food/food_screen.dart';
 import 'features/activity/activity_screen.dart';
 import 'features/gym/gym_screen.dart';
 import 'features/stats/stats_screen.dart';
+import 'features/splash/splash_screen.dart';
 
 final router = GoRouter(
-  initialLocation: '/',
+  initialLocation: '/splash',
   routes: [
+    GoRoute(
+      path: '/splash',
+      builder: (context, state) => const SplashScreen(),
+    ),
     ShellRoute(
       builder: (context, state, child) => ScaffoldWithNav(child: child),
       routes: [

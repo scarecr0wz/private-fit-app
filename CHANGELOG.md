@@ -3,6 +3,11 @@ y# Changelog
 ## [1.2.0] - 2026-06-19
 
 ### Added
+- **App Entrance**: 3D Animated Flutter splash screen and native launcher icons
+  - Generated premium 3D fitness logo (`assets/icon.jpg`)
+  - Configured native iOS splash screen via `flutter_native_splash`
+  - Configured native iOS launcher icon via `flutter_launcher_icons`
+  - Added Flutter-level animated splash screen with glowing effects
 - **Database Layer**: Local SQLite database using Drift for persistent data storage
   - Food logs, activity logs, and workout logs tables
   - Generated database schema (`database.g.dart`)
