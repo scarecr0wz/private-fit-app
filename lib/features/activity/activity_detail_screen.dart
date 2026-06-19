@@ -13,9 +13,9 @@ class ActivityDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     List<LatLng> routePoints = [];
-    if (activity.routePoints != null && activity.routePoints!.isNotEmpty) {
+    if (activity.routePoints.isNotEmpty) {
       try {
-        final decoded = jsonDecode(activity.routePoints!) as List;
+        final decoded = jsonDecode(activity.routePoints) as List;
         for (final p in decoded) {
           routePoints.add(LatLng(p['lat'], p['lng']));
         }

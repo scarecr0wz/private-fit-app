@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import '../../theme.dart';
 import '../../data/database.dart';
 import 'food_dummy.dart';
+import 'package:drift/drift.dart' as drift;
 
 class FoodScreen extends StatefulWidget {
   const FoodScreen({super.key});
@@ -371,7 +372,7 @@ class _FoodScreenState extends State<FoodScreen> {
     return StreamBuilder<List<FoodLog>>(
       stream: (db.select(db.foodLogs)
             ..where((t) => t.date.isBetweenValues(startOfDay, endOfDay))
-            ..orderBy([(t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc)]))
+            ..orderBy([(t) => drift.OrderingTerm(expression: t.date, mode: drift.OrderingMode.desc)]))
           .watch(),
       builder: (context, snapshot) {
         final logs = snapshot.data ?? [];
@@ -474,7 +475,7 @@ class _FoodScreenState extends State<FoodScreen> {
                       ],
                     ),
                   ),
-                  Text('${log.portionGrams.toInt()}g', style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
+                  Text('${log.grams.toInt()}g', style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
                 ],
               ),
             );

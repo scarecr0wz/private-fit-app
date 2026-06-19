@@ -27,11 +27,12 @@ Dokumen ini berisi daftar temuan dari *Smoke Test* pengguna dan rencana aksi unt
   - Memastikan *card* di tab *Stats* menampilkan parameter dengan jelas.
   - Membuat halaman baru `ActivityDetailScreen` (atau dialog) yang dipanggil ketika *card* di Stats diklik. Halaman ini akan membaca titik-titik koordinat dari database dan menggambar ulang rute lari di atas *FlutterMap*.
 
-## 5. Stats Screen - Grafik Kalori & Berat Badan
-- **Masalah:** Grafik balok "Kalori Terbakar" dan grafik garis "Tren Berat Badan" masih memakai data *dummy* statis.
+## ✅ 5. Stats Screen - Grafik Kalori & Berat Badan
+- **Status:** **DONE** (Grafik bar "Kalori Terbakar" dan line chart "Tren Berat Badan" telah diubah menggunakan `StreamBuilder` yang membaca data *real-time* dari SQLite (tabel `activityLogs`, `workoutLogs`, dan `bodyWeights`) selama 7 hari ke belakang).
+- **Masalah:** Grafik *Kalori Terbakar* (bar chart) dan *Tren Berat Badan* (line chart) di tab *Stats* masih menampilkan deretan angka buatan (*dummy data*).
 - **Rencana Aksi:** 
-  - Mengubah *BarChart* agar membaca agregasi data `caloriesBurned` 7 hari terakhir dari tabel `ActivityLogs` dan `WorkoutLogs`.
-  - Mengubah *LineChart* agar membaca riwayat tabel `BodyWeights`.
+  - Menyambungkan *bar chart* kalori agar menarik dari total `CaloriesOut` di SQLite selama seminggu terakhir.
+  - Menyambungkan *line chart* berat badan dengan tabel observasi/profil berat badan. Jika tabel belum ada, akan ditambahkan ke skema lokal `drift`.
 
 ## 6. Gym Screen
 - **Status:** *Hold* / Tunda. Perbaikan fokus ke poin 1 sampai 5 terlebih dahulu.

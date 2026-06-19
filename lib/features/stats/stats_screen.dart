@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../data/database.dart';
 import '../../theme.dart';
-import 'package:intl/intl.dart';
-import 'package:drift/drift.dart' as drift;
 import '../activity/activity_detail_screen.dart';
 
 
@@ -17,10 +15,6 @@ class StatsScreen extends StatefulWidget {
 
 class _StatsScreenState extends State<StatsScreen> {
   int _selectedTab = 0;
-
-  final List<double> _dummyCalories = [400, 550, 300, 650, 420, 700, 580];
-
-  // dummy data removed
 
   @override
   Widget build(BuildContext context) {
@@ -123,41 +117,18 @@ class _StatsScreenState extends State<StatsScreen> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const SizedBox(height: 20),
-                      _buildToggle(),
-                      const SizedBox(height: 24),
-                      _buildCalorieChartCard(),
-                      const SizedBox(height: 24),
-                      _buildWeightChartCard(),
-                      const SizedBox(height: 32),
-                      Text(
-                        'History Aktivitas',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: AppColors.onSurface,
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      const SizedBox(height: 16),
-                      StreamBuilder<List<ActivityLog>>(
-                        stream: db.select(db.activityLogs).watch(),
-                        builder: (context, activitySnapshot) {
-                          return StreamBuilder<List<WorkoutLog>>(
-                            stream: db.select(db.workoutLogs).watch(),
-                            builder: (context, workoutSnapshot) {
+                  child: StreamBuilder<List<ActivityLog>>(
+                    stream: db.select(db.activityLogs).watch(),
+                    builder: (context, activitySnapshot) {
+                      return StreamBuilder<List<WorkoutLog>>(
+                        stream: db.select(db.workoutLogs).watch(),
+                        builder: (context, workoutSnapshot) {
+                          return StreamBuilder<List<BodyWeight>>(
+                            stream: db.select(db.bodyWeights).watch(),
+                            builder: (context, weightSnapshot) {
                               final activities = activitySnapshot.data ?? [];
                               final workouts = workoutSnapshot.data ?? [];
-                              
-                              if (activities.isEmpty && workouts.isEmpty) {
-                                return const Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(20.0),
-                                    child: Text('Belum ada aktivitas', style: TextStyle(color: Colors.white54)),
-                                  ),
-                                );
-                              }
+                              final weights = weightSnapshot.data ?? [];
 
                               final List<Map<String, dynamic>> combined = [];
                               
@@ -195,91 +166,118 @@ class _StatsScreenState extends State<StatsScreen> {
                               combined.sort((a, b) => (b['date'] as DateTime).compareTo(a['date'] as DateTime));
 
                               return Column(
-                                children: combined.map((a) {
-                                  String type = a['type'];
-                                  String label = a['label'];
-                                  String detail = a['detail'];
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  const SizedBox(height: 20),
+                                  _buildToggle(),
+                                  const SizedBox(height: 24),
+                                  _buildCalorieChartCard(activities, workouts),
+                                  const SizedBox(height: 24),
+                                  _buildWeightChartCard(weights),
+                                  const SizedBox(height: 32),
+                                  Text(
+                                    'History Aktivitas',
+                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                          color: AppColors.onSurface,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  if (activities.isEmpty && workouts.isEmpty)
+                                    const Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(20.0),
+                                        child: Text('Belum ada aktivitas', style: TextStyle(color: Colors.white54)),
+                                      ),
+                                    )
+                                  else
+                                    ...combined.map((a) {
+                                      String type = a['type'];
+                                      String label = a['label'];
+                                      String detail = a['detail'];
 
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 12.0),
-                                child: GestureDetector(
-                                  onTap: () {
-                                    if (type == 'run' || type == 'bike') {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => ActivityDetailScreen(activity: a['raw']),
+                                      return Padding(
+                                        padding: const EdgeInsets.only(bottom: 12.0),
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            if (type == 'run' || type == 'bike') {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) => ActivityDetailScreen(activity: a['raw']),
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          child: _GlassCard(
+                                            child: Row(
+                                              children: [
+                                                Container(
+                                                  width: 48,
+                                                  height: 48,
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.surfaceContainerHigh,
+                                                    borderRadius: BorderRadius.circular(16),
+                                                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                                                  ),
+                                                  child: Icon(
+                                                    type == 'run' ? Icons.directions_run : (type == 'bike' ? Icons.directions_bike : Icons.fitness_center),
+                                                    color: AppColors.secondary,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 16),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        label,
+                                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                                              color: AppColors.onSurface,
+                                                              fontWeight: FontWeight.bold,
+                                                            ),
+                                                      ),
+                                                      Text(
+                                                        detail,
+                                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                              color: AppColors.onSurfaceVariant,
+                                                            ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                                  children: [
+                                                    Text(
+                                                      '${a['calories']}',
+                                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                                            color: AppColors.secondary,
+                                                            fontWeight: FontWeight.bold,
+                                                          ),
+                                                    ),
+                                                    Text(
+                                                      'kcal',
+                                                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                                            color: AppColors.onSurfaceVariant,
+                                                          ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
                                         ),
                                       );
-                                    }
-                                  },
-                                  child: _GlassCard(
-                                    child: Row(
-                                    children: [
-                                      Container(
-                                        width: 48,
-                                        height: 48,
-                                        decoration: BoxDecoration(
-                                          color: AppColors.surfaceContainerHigh,
-                                          borderRadius: BorderRadius.circular(16),
-                                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                                        ),
-                                        child: Icon(
-                                          type == 'run' ? Icons.directions_run : (type == 'bike' ? Icons.directions_bike : Icons.fitness_center),
-                                          color: AppColors.secondary,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              label,
-                                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                                    color: AppColors.onSurface,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                            ),
-                                            Text(
-                                              detail,
-                                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                                    color: AppColors.onSurfaceVariant,
-                                                  ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.end,
-                                        children: [
-                                          Text(
-                                            '${a['calories']}',
-                                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                                  color: AppColors.secondary,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                          ),
-                                          Text(
-                                            'kcal',
-                                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                                  color: AppColors.onSurfaceVariant,
-                                                ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                                    }),
+                                  const SizedBox(height: 100),
+                                ],
                               );
-                            }).toList(),
-                          );
                             },
                           );
                         },
-                      ),
-                      const SizedBox(height: 100),
-                    ],
+                      );
+                    },
                   ),
                 ),
               ),
@@ -351,7 +349,30 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
-  Widget _buildCalorieChartCard() {
+  Widget _buildCalorieChartCard(List<ActivityLog> activities, List<WorkoutLog> workouts) {
+    final now = DateTime.now();
+    final List<double> weeklyCalories = List.filled(7, 0.0);
+    double maxCal = 100.0;
+
+    for (int i = 0; i < 7; i++) {
+      final date = now.subtract(Duration(days: 6 - i));
+      double dayCal = 0;
+
+      for (var a in activities) {
+        if (a.date.year == date.year && a.date.month == date.month && a.date.day == date.day) {
+          dayCal += a.caloriesBurned;
+        }
+      }
+      for (var w in workouts) {
+        if (w.date.year == date.year && w.date.month == date.month && w.date.day == date.day) {
+          dayCal += w.caloriesBurned;
+        }
+      }
+      weeklyCalories[i] = dayCal;
+      if (dayCal > maxCal) maxCal = dayCal;
+    }
+    
+    maxCal = (maxCal * 1.2).ceilToDouble();
     return _GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -413,7 +434,7 @@ class _StatsScreenState extends State<StatsScreen> {
                       x: i,
                       barRods: [
                         BarChartRodData(
-                          toY: _dummyCalories[i],
+                          toY: weeklyCalories[i],
                           width: 16,
                           gradient: const LinearGradient(
                             colors: [AppColors.primary, AppColors.secondary],
@@ -423,7 +444,7 @@ class _StatsScreenState extends State<StatsScreen> {
                           borderRadius: BorderRadius.circular(4),
                           backDrawRodData: BackgroundBarChartRodData(
                             show: true,
-                            toY: 800,
+                            toY: maxCal,
                             color: Colors.white.withValues(alpha: 0.05),
                           ),
                         ),
@@ -438,7 +459,33 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
-  Widget _buildWeightChartCard() {
+  Widget _buildWeightChartCard(List<BodyWeight> weights) {
+    // Sort weights ascending by date
+    final sortedWeights = List<BodyWeight>.from(weights)
+      ..sort((a, b) => a.date.compareTo(b.date));
+
+    final spots = <FlSpot>[];
+    double minWeight = 50.0;
+    double maxWeight = 100.0;
+
+    if (sortedWeights.isNotEmpty) {
+      minWeight = sortedWeights.map((e) => e.weightKg).reduce((a, b) => a < b ? a : b);
+      maxWeight = sortedWeights.map((e) => e.weightKg).reduce((a, b) => a > b ? a : b);
+      
+      // Pad min and max
+      minWeight = (minWeight - 5).floorToDouble();
+      maxWeight = (maxWeight + 5).ceilToDouble();
+
+      // Take up to last 7 weights
+      final recent = sortedWeights.length > 7 ? sortedWeights.sublist(sortedWeights.length - 7) : sortedWeights;
+      for (int i = 0; i < recent.length; i++) {
+        spots.add(FlSpot(i.toDouble(), recent[i].weightKg));
+      }
+    } else {
+      spots.add(const FlSpot(0, 0));
+      minWeight = 0;
+      maxWeight = 10;
+    }
     return _GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -484,13 +531,7 @@ class _StatsScreenState extends State<StatsScreen> {
                 borderData: FlBorderData(show: false),
                 lineBarsData: [
                   LineChartBarData(
-                    spots: const [
-                      FlSpot(1, 75.5),
-                      FlSpot(2, 75.0),
-                      FlSpot(3, 74.8),
-                      FlSpot(4, 74.2),
-                      FlSpot(5, 73.5),
-                    ],
+                    spots: spots,
                     isCurved: true,
                     color: AppColors.secondary,
                     barWidth: 4,
@@ -514,10 +555,10 @@ class _StatsScreenState extends State<StatsScreen> {
                     ),
                   ),
                 ],
-                minX: 1,
-                maxX: 5,
-                minY: 70,
-                maxY: 80,
+                minX: 0,
+                maxX: (spots.length > 1 ? spots.length - 1 : 1).toDouble(),
+                minY: minWeight,
+                maxY: maxWeight,
               ),
             ),
           ),
@@ -531,11 +572,9 @@ class _StatsScreenState extends State<StatsScreen> {
 
 class _GlassCard extends StatelessWidget {
   final Widget child;
-  final EdgeInsetsGeometry padding;
 
   const _GlassCard({
     required this.child,
-    this.padding = const EdgeInsets.all(20),
   });
 
   @override
@@ -557,7 +596,7 @@ class _GlassCard extends StatelessWidget {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            padding: padding,
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
