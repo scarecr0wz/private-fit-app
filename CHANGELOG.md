@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.5.0] - 2026-06-19
+
+### Added
+- **Activity Screen**: Activity Type selector (Running / Cycling) bottom sheet with 3D animated cards
+- **Activity Screen**: Fullscreen 5-second countdown overlay before activity starts
+- **Activity Tracking**: Dynamic pace/speed label and calculation based on activity type (Pace min/km for run, Speed km/h for bike)
+- **Activity Tracking**: Custom map markers (`activity_icons.dart`) replacing standard blue dot:
+  - F1 Red Bull Car (`CustomPainter`) for Cycling
+  - Running Shoe Emoji (`👟`) for Running
+- **Activity Detail Screen**: Finish marker now uses custom F1 Car or Running Shoe based on recorded activity type
+- **Documentation**: Updated `docs/user_feedback_v2.md` with activity type & map markers section
 ## [1.4.1] - 2026-06-19
 
 ### Fixed

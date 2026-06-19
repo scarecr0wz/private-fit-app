@@ -24,3 +24,16 @@
   - **Pace History list** di bawah stats: bar chart horizontal per 0.5 km, warna bar = pace, ditampilkan jarak dan label pace di kiri-kanan.
   - **Marker Start (▶ hijau) dan Finish (■ merah)** di peta.
   - **Pace Legend overlay** di pojok kanan bawah peta.
+
+## 4. Activity Type & Map Markers
+- Sebelum klik "MULAI", tambahkan seleksi aktivitas (pop-up/bottom sheet) antara "Running" atau "Cycling".
+- Tampilkan countdown 5 detik sebelum start sesudah memilih tipe aktivitas.
+- Data dan tampilan harus berbeda antara running (pace) dan cycling (speed).
+- Custom icon (marker) di map pas record dan pas detail:
+  - Sepeda (Cycling): Mobil F1 (stylized Red Bull).
+  - Lari (Running): Icon Sepatu (👟).
+- ✅ **Done:** 
+  - Pop-up selector bergaya 3D card (`Running` dan `Cycling`).
+  - Animasi countdown overlay fullscreen 5 detik sebelum track.
+  - Custom Painter untuk mobil Red Bull F1 (dark blue, red, yellow details).
+  - Integrasi icon custom di current position marker (saat record) dan finish marker (saat detail activity) berdasarkan `activityType`.

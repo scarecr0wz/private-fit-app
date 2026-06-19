@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../../theme.dart';
 import '../../data/database.dart';
+import 'activity_icons.dart';
 
 // ─── Data model untuk checkpoint pace ────────────────────────────────────────
 
@@ -139,25 +140,11 @@ class ActivityDetailScreen extends StatelessWidget {
                             // Titik Finish
                             Marker(
                               point: routePoints.last,
-                              width: 28,
-                              height: 28,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFEF5350),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 2),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Color(0x99EF5350),
-                                      blurRadius: 10,
-                                    ),
-                                  ],
-                                ),
-                                child: const Center(
-                                  child: Icon(Icons.stop,
-                                      color: Colors.white, size: 14),
-                                ),
-                              ),
+                              width: 48,
+                              height: 48,
+                              child: activity.type == 'bike'
+                                  ? const RedBullF1Car(size: 48)
+                                  : const RunningShoeIcon(size: 48),
                             ),
                             // Pace checkpoints
                             ...checkpoints.map((cp) => Marker(

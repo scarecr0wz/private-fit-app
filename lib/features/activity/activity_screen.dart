@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../theme.dart';
 import 'activity_service.dart';
+import 'activity_icons.dart';
 
 class ActivityScreen extends StatefulWidget {
   const ActivityScreen({super.key});
@@ -68,6 +69,21 @@ class _ActivityScreenState extends State<ActivityScreen> {
   LatLng get _mapCenter =>
       _svc.routePoints.isNotEmpty ? _svc.routePoints.last : const LatLng(-6.200000, 106.816666);
 
+  // ── Activity Type Selector popup ────────────────────────────────────────
+  void _showActivityTypeSelector() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _ActivityTypePicker(
+        onSelected: (type) {
+          Navigator.of(context).pop();
+          _svc.beginCountdown(type);
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -104,21 +120,11 @@ class _ActivityScreenState extends State<ActivityScreen> {
                   markers: [
                     Marker(
                       point: _svc.routePoints.last,
-                      width: 24,
-                      height: 24,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.secondary,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.secondary.withValues(alpha: 0.6),
-                              blurRadius: 10,
-                              spreadRadius: 4,
-                            ),
-                          ],
-                        ),
-                      ),
+                      width: 48,
+                      height: 48,
+                      child: _svc.activityType == OutdoorActivityType.bike
+                          ? const RedBullF1Car(size: 48)
+                          : const RunningShoeIcon(size: 48),
                     ),
                   ],
                 ),
@@ -159,18 +165,35 @@ class _ActivityScreenState extends State<ActivityScreen> {
                         },
                       ),
                       const SizedBox(width: 16),
-                      Text(
-                        'Outdoor Run',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w800,
-                              shadows: const [
-                                Shadow(
-                                  color: Color(0x80C4C0FF),
-                                  blurRadius: 20,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _svc.state == ActivityState.idle
+                                ? 'Outdoor'
+                                : _svc.activityType.label,
+                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w800,
+                                  shadows: const [
+                                    Shadow(
+                                      color: Color(0x80C4C0FF),
+                                      blurRadius: 20,
+                                    ),
+                                  ],
                                 ),
-                              ],
+                          ),
+                          if (_svc.state != ActivityState.idle)
+                            Text(
+                              _svc.activityType == OutdoorActivityType.run
+                                  ? '🏃 Running'
+                                  : '🚴 Cycling',
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: AppColors.onSurfaceVariant,
+                              ),
                             ),
+                        ],
                       ),
                     ],
                   ),
@@ -232,7 +255,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Stats Grid
+                  // Stats Grid — icons dinamis berdasarkan tipe
                   Row(
                     children: [
                       Expanded(
@@ -251,8 +274,11 @@ class _ActivityScreenState extends State<ActivityScreen> {
                       _buildDivider(),
                       Expanded(
                         child: _StatItem(
-                          icon: Icons.speed_outlined,
-                          value: _svc.pace,
+                          // Pace (running) atau Speed (cycling)
+                          icon: _svc.activityType == OutdoorActivityType.run
+                              ? Icons.speed_outlined
+                              : Icons.electric_bolt_outlined,
+                          value: _svc.speedDisplay,
                         ),
                       ),
                       _buildDivider(),
@@ -277,6 +303,14 @@ class _ActivityScreenState extends State<ActivityScreen> {
               ),
             ),
           ),
+
+          // 4. Countdown overlay
+          if (_svc.state == ActivityState.countdown)
+            _CountdownOverlay(
+              count: _svc.countdownValue,
+              activityType: _svc.activityType,
+              onCancel: () => _svc.cancelCountdown(),
+            ),
         ],
       ),
     );
@@ -291,12 +325,17 @@ class _ActivityScreenState extends State<ActivityScreen> {
   }
 
   Widget _buildActionControls() {
+    // Saat countdown: sembunyikan controls (overlay yang tampil)
+    if (_svc.state == ActivityState.countdown) {
+      return const SizedBox.shrink();
+    }
+
     if (_svc.state == ActivityState.idle) {
       return _Btn3DPrimary(
-        text: 'START',
+        text: 'MULAI',
         icon: Icons.play_arrow,
         width: 176,
-        onTap: () => _svc.startActivity(),
+        onTap: _showActivityTypeSelector,
       );
     }
 
@@ -323,6 +362,330 @@ class _ActivityScreenState extends State<ActivityScreen> {
     );
   }
 }
+
+// ── Activity Type Picker (Bottom Sheet) ──────────────────────────────────────
+
+class _ActivityTypePicker extends StatelessWidget {
+  final void Function(OutdoorActivityType) onSelected;
+
+  const _ActivityTypePicker({required this.onSelected});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A2A),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.5),
+            blurRadius: 40,
+            offset: const Offset(0, -10),
+          ),
+        ],
+      ),
+      padding: EdgeInsets.fromLTRB(
+          24, 16, 24, 24 + MediaQuery.of(context).padding.bottom),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.only(bottom: 28),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          Text(
+            'Pilih Aktivitas',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Setelah memilih, akan ada countdown 5 detik',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.white38,
+                ),
+          ),
+          const SizedBox(height: 32),
+
+          // Cards row
+          Row(
+            children: [
+              Expanded(
+                child: _ActivityTypeCard(
+                  icon: '🏃',
+                  label: 'Running',
+                  subtitle: 'Pace • Jarak • Kalori',
+                  color: AppColors.secondary,
+                  glowColor: const Color(0xFF00C9A7),
+                  onTap: () => onSelected(OutdoorActivityType.run),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _ActivityTypeCard(
+                  icon: '🚴',
+                  label: 'Cycling',
+                  subtitle: 'Speed (km/h) • Jarak • Kalori',
+                  color: AppColors.primary,
+                  glowColor: const Color(0xFF9B96FF),
+                  onTap: () => onSelected(OutdoorActivityType.bike),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActivityTypeCard extends StatefulWidget {
+  final String icon;
+  final String label;
+  final String subtitle;
+  final Color color;
+  final Color glowColor;
+  final VoidCallback onTap;
+
+  const _ActivityTypeCard({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.color,
+    required this.glowColor,
+    required this.onTap,
+  });
+
+  @override
+  State<_ActivityTypeCard> createState() => _ActivityTypeCardState();
+}
+
+class _ActivityTypeCardState extends State<_ActivityTypeCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 120));
+    _scale = Tween<double>(begin: 1.0, end: 0.94).animate(
+        CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _ctrl.forward(),
+      onTapUp: (_) {
+        _ctrl.reverse();
+        widget.onTap();
+      },
+      onTapCancel: () => _ctrl.reverse(),
+      child: AnimatedBuilder(
+        animation: _scale,
+        builder: (_, child) =>
+            Transform.scale(scale: _scale.value, child: child),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                widget.color.withValues(alpha: 0.18),
+                widget.color.withValues(alpha: 0.06),
+              ],
+            ),
+            border: Border.all(
+                color: widget.color.withValues(alpha: 0.4), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: widget.glowColor.withValues(alpha: 0.25),
+                blurRadius: 20,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(widget.icon, style: const TextStyle(fontSize: 36)),
+              const SizedBox(height: 12),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  color: widget.color,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                  shadows: [
+                    Shadow(
+                        color: widget.glowColor.withValues(alpha: 0.6),
+                        blurRadius: 8)
+                  ],
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                widget.subtitle,
+                style: const TextStyle(
+                  color: Colors.white38,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Countdown Overlay ─────────────────────────────────────────────────────────
+
+class _CountdownOverlay extends StatelessWidget {
+  final int count;
+  final OutdoorActivityType activityType;
+  final VoidCallback onCancel;
+
+  const _CountdownOverlay({
+    required this.count,
+    required this.activityType,
+    required this.onCancel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = activityType == OutdoorActivityType.run
+        ? AppColors.secondary
+        : AppColors.primary;
+    final glow = activityType == OutdoorActivityType.run
+        ? const Color(0xFF00C9A7)
+        : const Color(0xFF9B96FF);
+    final progress = (5 - count) / 5.0; // 0.0 → 1.0
+
+    return Positioned.fill(
+      child: Container(
+        color: Colors.black.withValues(alpha: 0.75),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Animated label
+            Text(
+              activityType == OutdoorActivityType.run ? '🏃 Running' : '🚴 Cycling',
+              style: const TextStyle(
+                fontSize: 18,
+                color: Colors.white54,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // Circle countdown
+            SizedBox(
+              width: 160,
+              height: 160,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Progress ring
+                  TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: (5 - count) / 5.0, end: progress),
+                    duration: const Duration(milliseconds: 900),
+                    curve: Curves.easeOut,
+                    builder: (_, v, __) => CircularProgressIndicator(
+                      value: v,
+                      strokeWidth: 8,
+                      backgroundColor: Colors.white.withValues(alpha: 0.08),
+                      valueColor: AlwaysStoppedAnimation<Color>(color),
+                    ),
+                  ),
+                  // Countdown number
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    transitionBuilder: (child, anim) => ScaleTransition(
+                      scale: anim,
+                      child: FadeTransition(opacity: anim, child: child),
+                    ),
+                    child: Text(
+                      '$count',
+                      key: ValueKey(count),
+                      style: TextStyle(
+                        fontSize: 72,
+                        fontWeight: FontWeight.w900,
+                        color: color,
+                        shadows: [
+                          Shadow(
+                            color: glow.withValues(alpha: 0.8),
+                            blurRadius: 30,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 32),
+            const Text(
+              'Bersiap...',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white70,
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: 40),
+
+            // Cancel button
+            GestureDetector(
+              onTap: onCancel,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(99),
+                  color: Colors.white.withValues(alpha: 0.08),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                ),
+                child: const Text(
+                  'BATAL',
+                  style: TextStyle(
+                    color: Colors.white54,
+                    fontSize: 12,
+                    letterSpacing: 2,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _IconBtn3D extends StatelessWidget {
   final IconData icon;
@@ -599,3 +962,5 @@ class _CircleBtn3DErrorState extends State<_CircleBtn3DError> {
     );
   }
 }
+
+

@@ -5,9 +5,18 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import '../../data/database.dart';
 
-enum ActivityState { idle, running, paused }
+enum ActivityState { idle, countdown, running, paused }
 
-/// Singleton service yang menyimpan state Outdoor Run secara global.
+/// Tipe aktivitas
+enum OutdoorActivityType { run, bike }
+
+extension OutdoorActivityTypeExt on OutdoorActivityType {
+  String get dbKey => this == OutdoorActivityType.run ? 'run' : 'bike';
+  String get label => this == OutdoorActivityType.run ? 'Running' : 'Cycling';
+  String get speedLabel => this == OutdoorActivityType.run ? 'Pace' : 'Speed';
+}
+
+/// Singleton service yang menyimpan state Outdoor Activity secara global.
 /// State tidak akan hilang meski user berpindah tab.
 class ActivityService extends ChangeNotifier {
   ActivityService._();
@@ -15,25 +24,32 @@ class ActivityService extends ChangeNotifier {
 
   // ─── State ────────────────────────────────────────────────────────────────
   ActivityState state = ActivityState.idle;
+  OutdoorActivityType activityType = OutdoorActivityType.run;
+
   Duration duration = Duration.zero;
   double distanceKm = 0.0;
   int calories = 0;
-  String pace = "0'00\"";
+
+  /// Running: pace (min/km) | Cycling: speed (km/h)
+  String speedDisplay = "0'00\"";
+
   List<LatLng> routePoints = [];
 
-  // Internal tracking data: list of (point, timestamp) untuk pace per segment
+  // Internal tracking data
   final List<_RoutePointData> _routeData = [];
+  final List<double> pacePerPoint = []; // min/km per titik (-1 = unknown)
 
-  // Pace per segmen yang sudah dihitung (min/km), indeks sejajar routePoints
-  final List<double> pacePerPoint = []; // nilai -1 berarti belum terhitung
+  // Countdown state
+  int countdownValue = 5;
 
   Timer? _timer;
+  Timer? _countdownTimer;
   StreamSubscription<Position>? _positionSub;
 
-  // ─── Minimum distance sebelum menghitung pace (hindari bug pace awal) ─────
+  // ─── Minimum distance sebelum menghitung pace ─────────────────────────────
   static const double _minDistanceForPaceKm = 0.05; // 50m
 
-  // ─── Start ────────────────────────────────────────────────────────────────
+  // ─── Permission ───────────────────────────────────────────────────────────
   Future<bool> requestPermission() async {
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
@@ -44,15 +60,35 @@ class ActivityService extends ChangeNotifier {
     return true;
   }
 
-  Future<void> startActivity() async {
+  // ─── Begin countdown then start ───────────────────────────────────────────
+  Future<void> beginCountdown(OutdoorActivityType type) async {
     final granted = await requestPermission();
     if (!granted) return;
 
+    activityType = type;
+    state = ActivityState.countdown;
+    countdownValue = 5;
+    notifyListeners();
+
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      countdownValue--;
+      notifyListeners();
+      if (countdownValue <= 0) {
+        t.cancel();
+        _countdownTimer = null;
+        _startActivity();
+      }
+    });
+  }
+
+  // ─── Start (dipanggil otomatis setelah countdown selesai) ─────────────────
+  Future<void> _startActivity() async {
     state = ActivityState.running;
     if (routePoints.isEmpty) {
       try {
         final pos = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+          locationSettings:
+              const LocationSettings(accuracy: LocationAccuracy.high),
         );
         final startPoint = LatLng(pos.latitude, pos.longitude);
         final now = DateTime.now();
@@ -62,14 +98,13 @@ class ActivityService extends ChangeNotifier {
       } catch (_) {}
     }
     notifyListeners();
-
     _startTimerAndStream();
   }
 
   void _startTimerAndStream() {
     _timer ??= Timer.periodic(const Duration(seconds: 1), (_) {
       duration += const Duration(seconds: 1);
-      _recalcPace();
+      _recalcSpeed();
       notifyListeners();
     });
 
@@ -88,14 +123,20 @@ class ActivityService extends ChangeNotifier {
       if (_routeData.isNotEmpty) {
         final lastData = _routeData.last;
         final distM = Geolocator.distanceBetween(
-          lastData.point.latitude, lastData.point.longitude,
-          newPoint.latitude, newPoint.longitude,
+          lastData.point.latitude,
+          lastData.point.longitude,
+          newPoint.latitude,
+          newPoint.longitude,
         );
         distanceKm += distM / 1000.0;
-        calories = (distanceKm * 60).round();
 
-        // Hitung pace untuk segmen ini (menit per km)
-        final timeDiffSec = now.difference(lastData.time).inMilliseconds / 1000.0;
+        // Hitung kalori — running: ~60 kcal/km, cycling: ~30 kcal/km
+        calories = activityType == OutdoorActivityType.run
+            ? (distanceKm * 60).round()
+            : (distanceKm * 30).round();
+
+        final timeDiffSec =
+            now.difference(lastData.time).inMilliseconds / 1000.0;
         if (distM > 0 && timeDiffSec > 0) {
           final meterPerSec = distM / timeDiffSec;
           if (meterPerSec > 0) {
@@ -107,22 +148,33 @@ class ActivityService extends ChangeNotifier {
       routePoints.add(newPoint);
       pacePerPoint.add(segPace);
       _routeData.add(_RoutePointData(point: newPoint, time: now));
-      _recalcPace();
+      _recalcSpeed();
       notifyListeners();
     });
   }
 
-  /// Hitung pace hanya jika sudah menempuh jarak minimum (hindari bug awal)
-  void _recalcPace() {
-    if (distanceKm < _minDistanceForPaceKm) {
-      pace = "--'--\"";
-      return;
+  void _recalcSpeed() {
+    if (activityType == OutdoorActivityType.run) {
+      // Pace: min/km
+      if (distanceKm < _minDistanceForPaceKm) {
+        speedDisplay = "--'--\"";
+        return;
+      }
+      final minutes = duration.inSeconds / 60.0;
+      final paceValue = minutes / distanceKm;
+      final paceMin = paceValue.floor();
+      final paceSec = ((paceValue - paceMin) * 60).floor();
+      speedDisplay = "$paceMin'${paceSec.toString().padLeft(2, '0')}\"";
+    } else {
+      // Speed: km/h
+      if (duration.inSeconds == 0 || distanceKm < _minDistanceForPaceKm) {
+        speedDisplay = '0.0';
+        return;
+      }
+      final hours = duration.inSeconds / 3600.0;
+      final kmh = distanceKm / hours;
+      speedDisplay = kmh.toStringAsFixed(1);
     }
-    final minutes = duration.inSeconds / 60.0;
-    final paceValue = minutes / distanceKm;
-    final paceMinutes = paceValue.floor();
-    final paceSeconds = ((paceValue - paceMinutes) * 60).floor();
-    pace = "$paceMinutes'${paceSeconds.toString().padLeft(2, '0')}\"";
   }
 
   // ─── Pause ────────────────────────────────────────────────────────────────
@@ -140,6 +192,15 @@ class ActivityService extends ChangeNotifier {
     _startTimerAndStream();
   }
 
+  // ─── Cancel countdown ─────────────────────────────────────────────────────
+  void cancelCountdown() {
+    _countdownTimer?.cancel();
+    _countdownTimer = null;
+    state = ActivityState.idle;
+    countdownValue = 5;
+    notifyListeners();
+  }
+
   // ─── Stop & Save ──────────────────────────────────────────────────────────
   Future<void> stopActivity() async {
     _timer?.cancel();
@@ -148,24 +209,26 @@ class ActivityService extends ChangeNotifier {
     _positionSub = null;
 
     if (routePoints.isNotEmpty) {
-      // Simpan routePoints beserta pace per titik
       final routeJson = jsonEncode(
-        List.generate(routePoints.length, (i) => {
-          'lat': routePoints[i].latitude,
-          'lng': routePoints[i].longitude,
-          'pace': pacePerPoint.length > i ? pacePerPoint[i] : -1.0,
-        }),
-      );
-      await db.into(db.activityLogs).insert(
-        ActivityLogsCompanion.insert(
-          type: 'run',
-          date: DateTime.now(),
-          durationSeconds: duration.inSeconds,
-          distanceMeters: distanceKm * 1000,
-          caloriesBurned: calories.toDouble(),
-          routePoints: routeJson,
+        List.generate(
+          routePoints.length,
+          (i) => {
+            'lat': routePoints[i].latitude,
+            'lng': routePoints[i].longitude,
+            'pace': pacePerPoint.length > i ? pacePerPoint[i] : -1.0,
+          },
         ),
       );
+      await db.into(db.activityLogs).insert(
+            ActivityLogsCompanion.insert(
+              type: activityType.dbKey,
+              date: DateTime.now(),
+              durationSeconds: duration.inSeconds,
+              distanceMeters: distanceKm * 1000,
+              caloriesBurned: calories.toDouble(),
+              routePoints: routeJson,
+            ),
+          );
     }
 
     // Reset semua state
@@ -173,7 +236,7 @@ class ActivityService extends ChangeNotifier {
     duration = Duration.zero;
     distanceKm = 0.0;
     calories = 0;
-    pace = "0'00\"";
+    speedDisplay = "0'00\"";
     routePoints.clear();
     pacePerPoint.clear();
     _routeData.clear();
