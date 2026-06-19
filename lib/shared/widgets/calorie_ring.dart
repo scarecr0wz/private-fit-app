@@ -41,6 +41,23 @@ class _CalorieRingState extends State<CalorieRing>
   }
 
   @override
+  void didUpdateWidget(CalorieRing oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.consumed != widget.consumed || 
+        oldWidget.burned != widget.burned || 
+        oldWidget.goal != widget.goal) {
+      
+      final net = widget.consumed - widget.burned;
+      final target = (net / widget.goal).clamp(0.0, 1.0);
+
+      _animation = Tween<double>(begin: _animation.value, end: target).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+      );
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();

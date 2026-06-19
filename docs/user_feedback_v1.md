@@ -2,7 +2,8 @@
 
 Dokumen ini berisi daftar temuan dari *Smoke Test* pengguna dan rencana aksi untuk mengeksekusinya satu per satu sebelum melangkah ke integrasi Backend (Session 9).
 
-## 1. Dashboard - Calorie Ring (Cincin Kalori)
+## ✅ 1. Dashboard - Calorie Ring (Cincin Kalori)
+- **Status:** **DONE** (Sudah diperbaiki dengan `didUpdateWidget`).
 - **Masalah:** Cincin (lingkaran) kalori tidak berputar/terisi untuk memenuhi kebutuhan harian.
 - **Rencana Aksi:** Memperbaiki logika animasi dan rasio pada widget `CalorieRing` di `dashboard_screen.dart` agar nilai `consumed` dibagi dengan `goal` tervisualisasi dengan benar.
 
