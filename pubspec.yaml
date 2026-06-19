@@ -47,6 +47,9 @@ dependencies:
 
   # Fonts
   google_fonts: ^6.2.1
+  flutter_map: ^8.3.0
+  latlong2: ^0.9.1
+  geolocator: ^14.0.3
 
 dev_dependencies:
   flutter_test:
