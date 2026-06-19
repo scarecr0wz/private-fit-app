@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../theme.dart';
 import '../../data/database.dart';
 import 'activity_icons.dart';
@@ -31,13 +32,46 @@ class ActivityDetailScreen extends StatelessWidget {
     // ── Parse route points + pace ───────────────────────────────────────────
     List<LatLng> routePoints = [];
     List<double> paceValues = []; // min/km per titik, -1 = tidak diketahui
+    double elevationGain = 0.0;
+    double currentBaselineAlt = 0.0;
+    
+    // For Elevation Chart
+    List<FlSpot> elevationSpots = [];
+    double cumulativeDist = 0.0;
+    double minAlt = double.infinity;
+    double maxAlt = double.negativeInfinity;
 
     if (activity.routePoints.isNotEmpty) {
       try {
         final decoded = jsonDecode(activity.routePoints) as List;
-        for (final p in decoded) {
-          routePoints.add(LatLng(p['lat'], p['lng']));
+        for (int i = 0; i < decoded.length; i++) {
+          final p = decoded[i];
+          final point = LatLng(p['lat'], p['lng']);
+          routePoints.add(point);
           paceValues.add((p['pace'] ?? -1.0).toDouble());
+
+          if (i > 0) {
+            cumulativeDist += _distBetween(routePoints[i - 1], point);
+          }
+
+          if (p.containsKey('alt')) {
+            final double alt = (p['alt'] as num).toDouble();
+            elevationSpots.add(FlSpot(cumulativeDist, alt));
+            if (alt < minAlt) minAlt = alt;
+            if (alt > maxAlt) maxAlt = alt;
+
+            if (i == 0) {
+              currentBaselineAlt = alt;
+            } else {
+              final altDiff = alt - currentBaselineAlt;
+              if (altDiff >= 2.0) {
+                elevationGain += altDiff;
+                currentBaselineAlt = alt;
+              } else if (altDiff <= -2.0) {
+                currentBaselineAlt = alt;
+              }
+            }
+          }
         }
       } catch (e) {
         // ignore parsing error
@@ -195,11 +229,14 @@ class ActivityDetailScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _StatItem(label: 'DURATION', value: durationStr),
-                      _StatItem(label: 'PACE', value: paceStr),
-                      _StatItem(
+                      Expanded(child: _StatItem(label: 'DURATION', value: durationStr)),
+                      Expanded(child: _StatItem(label: 'PACE', value: paceStr)),
+                      Expanded(child: _StatItem(label: 'ELEV GAIN', value: '${elevationGain.toInt()}m')),
+                      Expanded(
+                        child: _StatItem(
                           label: 'CALORIES',
                           value: '${activity.caloriesBurned.toInt()}'),
+                      ),
                     ],
                   ),
 
@@ -223,6 +260,84 @@ class ActivityDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     ...paceHistory.map((entry) => _PaceHistoryRow(entry: entry)),
+                  ],
+
+                  // Elevation Profile Chart
+                  if (elevationSpots.isNotEmpty && maxAlt > minAlt) ...[
+                    const SizedBox(height: 32),
+                    Row(
+                      children: [
+                        const Icon(Icons.terrain,
+                            color: AppColors.primary, size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Elevation Profile',
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: AppColors.onSurface,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 120,
+                      child: LineChart(
+                        LineChartData(
+                          minX: 0,
+                          maxX: cumulativeDist,
+                          minY: minAlt - (maxAlt - minAlt) * 0.2, // bottom pad
+                          maxY: maxAlt + (maxAlt - minAlt) * 0.2, // top pad
+                          gridData: const FlGridData(show: false),
+                          titlesData: FlTitlesData(
+                            show: true,
+                            topTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: false)),
+                            rightTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: false)),
+                            bottomTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: false)),
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 32,
+                                getTitlesWidget: (val, meta) {
+                                  return Text(
+                                    '${val.toInt()}m',
+                                    style: const TextStyle(
+                                        color: Colors.white54, fontSize: 9),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                          borderData: FlBorderData(show: false),
+                          lineBarsData: [
+                            LineChartBarData(
+                              spots: elevationSpots,
+                              isCurved: true,
+                              curveSmoothness: 0.15,
+                              color: AppColors.primary,
+                              barWidth: 2,
+                              isStrokeCapRound: true,
+                              dotData: const FlDotData(show: false),
+                              belowBarData: BarAreaData(
+                                show: true,
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppColors.primary.withValues(alpha: 0.5),
+                                    AppColors.primary.withValues(alpha: 0.0),
+                                  ],
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ],
               ),

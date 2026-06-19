@@ -46,6 +46,11 @@ class ActivityService extends ChangeNotifier {
   // Internal tracking data
   final List<_RoutePointData> _routeData = [];
   final List<double> pacePerPoint = []; // min/km per titik (-1 = unknown)
+  final List<double> altitudePerPoint = []; // meter dari atas permukaan laut
+
+  double elevationGain = 0.0;
+  double _currentBaselineAlt = 0.0;
+  static const double _elevationThreshold = 2.0; // Filter noise 2 meter
 
   // Countdown state
   int countdownValue = 5;
@@ -116,7 +121,9 @@ class ActivityService extends ChangeNotifier {
         final now = DateTime.now();
         routePoints.add(startPoint);
         pacePerPoint.add(-1);
-        _routeData.add(_RoutePointData(point: startPoint, time: now));
+        altitudePerPoint.add(pos.altitude);
+        _currentBaselineAlt = pos.altitude;
+        _routeData.add(_RoutePointData(point: startPoint, time: now, altitude: pos.altitude));
       } catch (_) {}
     }
     _lastStartTime ??= DateTime.now();
@@ -196,9 +203,22 @@ class ActivityService extends ChangeNotifier {
         }
       }
 
+      // Hitung Elevation Gain (dengan noise filter)
+      final newAlt = pos.altitude;
+      if (altitudePerPoint.isNotEmpty) {
+        final altDiff = newAlt - _currentBaselineAlt;
+        if (altDiff >= _elevationThreshold) {
+          elevationGain += altDiff;
+          _currentBaselineAlt = newAlt;
+        } else if (altDiff <= -_elevationThreshold) {
+          _currentBaselineAlt = newAlt;
+        }
+      }
+
       routePoints.add(newPoint);
       pacePerPoint.add(segPace);
-      _routeData.add(_RoutePointData(point: newPoint, time: now));
+      altitudePerPoint.add(newAlt);
+      _routeData.add(_RoutePointData(point: newPoint, time: now, altitude: newAlt));
       _recalcSpeed();
       notifyListeners();
     });
@@ -272,6 +292,7 @@ class ActivityService extends ChangeNotifier {
             'lat': routePoints[i].latitude,
             'lng': routePoints[i].longitude,
             'pace': pacePerPoint.length > i ? pacePerPoint[i] : -1.0,
+            'alt': altitudePerPoint.length > i ? altitudePerPoint[i] : 0.0,
           },
         ),
       );
@@ -294,8 +315,11 @@ class ActivityService extends ChangeNotifier {
     distanceKm = 0.0;
     calories = 0;
     speedDisplay = "0'00\"";
+    elevationGain = 0.0;
+    _currentBaselineAlt = 0.0;
     routePoints.clear();
     pacePerPoint.clear();
+    altitudePerPoint.clear();
     _routeData.clear();
 
     notifyListeners();
@@ -305,5 +329,6 @@ class ActivityService extends ChangeNotifier {
 class _RoutePointData {
   final LatLng point;
   final DateTime time;
-  _RoutePointData({required this.point, required this.time});
+  final double altitude;
+  _RoutePointData({required this.point, required this.time, required this.altitude});
 }

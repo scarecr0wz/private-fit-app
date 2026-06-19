@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.0] - 2026-06-19
+
+### Added
+- **Activity Tracking**: Added background altitude (elevation) recording utilizing GPS sensors.
+- **Activity Tracking**: Real-time automated Elevation Gain calculation with a 2-meter noise threshold filter to prevent inaccurate GPS leaps.
+- **Activity Detail Screen**: Added new "ELEV GAIN" statistic to the summary metrics panel.
+- **Activity Detail Screen**: Beautiful 2D interactive Area Chart added below Pace History to visualize the route's elevation profile.
+
 ## [1.5.3] - 2026-06-19
 
 ### Added
