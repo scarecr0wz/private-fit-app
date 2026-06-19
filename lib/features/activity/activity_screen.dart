@@ -332,8 +332,8 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
     if (_svc.state == ActivityState.idle) {
       return _Btn3DPrimary(
-        text: 'MULAI',
-        icon: Icons.play_arrow,
+        text: 'START',
+        icon: Icons.play_arrow_rounded,
         width: 176,
         onTap: _showActivityTypeSelector,
       );
@@ -606,18 +606,7 @@ class _CountdownOverlay extends StatelessWidget {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Progress ring
-                  TweenAnimationBuilder<double>(
-                    tween: Tween<double>(begin: (5 - count) / 5.0, end: progress),
-                    duration: const Duration(milliseconds: 900),
-                    curve: Curves.easeOut,
-                    builder: (_, v, __) => CircularProgressIndicator(
-                      value: v,
-                      strokeWidth: 8,
-                      backgroundColor: Colors.white.withValues(alpha: 0.08),
-                      valueColor: AlwaysStoppedAnimation<Color>(color),
-                    ),
-                  ),
+
                   // Countdown number
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
@@ -786,12 +775,17 @@ class _StatItem extends StatelessWidget {
           size: 16,
         ),
         const SizedBox(height: 4),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppColors.onSurface,
-                fontWeight: FontWeight.bold,
-              ),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            value,
+            maxLines: 1,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.onSurface,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
+                ),
+          ),
         ),
       ],
     );

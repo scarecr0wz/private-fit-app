@@ -1073,15 +1073,14 @@ class _LegendItem extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: isActive ? color : AppColors.onSurfaceVariant,
-                fontWeight: isActive ? FontWeight.w700 : FontWeight.normal,
-              ),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: isActive ? color : AppColors.onSurfaceVariant,
+              fontWeight: isActive ? FontWeight.w700 : FontWeight.normal,
             ),
           ),
+          const Spacer(),
           Text(
             value,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -1199,7 +1198,7 @@ class _AddFoodSheet3D extends StatefulWidget {
 }
 
 class _AddFoodSheet3DState extends State<_AddFoodSheet3D> {
-  double _grams = 200;
+  double _grams = 100;
 
   int get _calories =>
       (widget.food.caloriesPer100g * _grams / 100).round();
