@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.5.1] - 2026-06-19
+
+### Changed
+- **Activity Screen**: Start button text changed from "MULAI" to "START".
+- **Activity Screen**: Removed circular progress bar from the countdown overlay for a cleaner UI.
+- **Activity Tracking**: Replaced CustomPaint F1 car map marker with a crisp, high-res OS Race Car Emoji (🏎️).
+- **Food Screen**: Changed default portion size from 200g to 100g in Add Food bottom sheet to match standard nutritional data baseline.
+- **Documentation**: Generated `docs/user_feedback_v3.md` compiling the recent feedback and fixes.
+
+### Fixed
+- **Activity Screen**: Fixed metrics card UI wrapping by forcing 4-column equal width via `Expanded` + `FittedBox` + `maxLines: 1`. 
+- **Food Screen**: Fixed "Protein" label wrapping in the nutrition legend by replacing `Expanded` with `Spacer()`.
 ## [1.5.0] - 2026-06-19
 
 ### Added
