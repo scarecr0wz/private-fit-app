@@ -745,7 +745,7 @@ class _BottomPanel extends StatelessWidget {
   final bool atEnd;
   final bool isStyleLoaded;
   final bool isResetting;
-  final AsyncCallback onTogglePlay;
+  final VoidCallback onTogglePlay;
 
   const _BottomPanel({
     required this.progress,
