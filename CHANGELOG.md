@@ -1,15 +1,16 @@
 # Changelog
 
-## [1.7.1] - 2026-06-20
+## [1.7.2] - 2026-06-20
 
-### Fixed
-- **3D Flyover**: Fixed "Start Flyover" button doing nothing after being pressed.
-  - Added `_isStyleLoaded` guard — animation tick now waits for MapLibre style and GeoJSON source to fully initialize before running.
-  - Added index-based throttle (`_lastUpdatedIndex`) to prevent flooding MapLibre with `setGeoJsonSource` + `animateCamera` calls on every animation frame (~60fps).
-  - Increased camera animation duration from 100ms to 400ms to eliminate race conditions and jitter.
-  - "Start Flyover" button is now disabled (greyed out) until the 3D map is fully ready.
-  - Added loading overlay while the map and terrain style are loading.
-  - Fixed potential memory leak by calling `removeListener` in `dispose()`.
+### Changed
+- **3D Flyover → Route Replay**: Redesigned the 3D map screen from a cinematic flyover into a Strava-style route replay.
+  - **Route now renders correctly**: switched from unreliable GeoJSON source updates to MapLibre `addLine` annotation API, which guarantees the route line is always visible.
+  - **Satellite + 3D terrain**: map style changed to MapTiler `hybrid` (satellite tiles with road/label overlay); terrain DEM source added with 1.5× elevation exaggeration via `setTerrain`.
+  - **Strava-style progressive drawing**: full ghost route (dim white) shown immediately on load; a bright red line grows from start to finish as the animation plays; a moving white dot indicates the current head position.
+  - **Stationary camera**: camera now fits the entire route in view on load (with slight 40° tilt for 3D depth) and stays fixed during replay — no more disorienting camera flying.
+  - **Replay button**: added a reset/replay icon in the app bar to restart animation from the beginning without re-navigating.
+  - **Progress bar**: a progress indicator below the play button shows replay % and current point count.
+  - **Loading overlay**: descriptive loading screen shown while satellite tiles and terrain DEM initialize.
 
 ## [1.7.0] - 2026-06-19
 
