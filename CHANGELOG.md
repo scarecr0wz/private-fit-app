@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.8.1] - 2026-06-21
+
+### Added
+- **Weather Widget**: Short-term predictive weather forecasts (e.g., "Expect rain in ~2h 🌧️") powered by Open-Meteo's hourly API integration.
+- **Weather Widget**: Dynamic and specific exercise suitability messages depending on weather thresholds (e.g., "Extreme heat (36°C) 🥵 Risk of heatstroke...").
+- **Weather Widget**: City name location tracking via Nominatim OpenStreetMap Reverse Geocoding API.
+- **Weather Widget**: Day and night aware emojis (e.g., ☀️ for day, 🌙 for night) using Open-Meteo's `is_day` property.
+
+### Changed
+- **Dashboard Layout**: Refactored `WeatherCard` to display inline with the "Hello, User!" greeting, removing the heavy card container for a cleaner, compact dashboard UI that fits the dark-kinetic style.
+- **Weather Service**: Reduced caching duration from 15 minutes to 5 minutes for more frequent updates.
+
+### Fixed
+- **Dashboard UI**: Fixed `RenderFlex overflowed by 99710 pixels` crash by wrapping inline greeting and weather elements with `Expanded` and `Flexible`.
+
 ## [1.8.0] - 2026-06-20
 
 ### Added

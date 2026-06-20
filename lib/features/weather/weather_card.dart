@@ -6,7 +6,8 @@ import '../../theme.dart';
 /// Fetches current weather from Open-Meteo and displays temperature,
 /// humidity, wind speed, and exercise suitability.
 class WeatherCard extends StatefulWidget {
-  const WeatherCard({super.key});
+  final Widget? greeting;
+  const WeatherCard({super.key, this.greeting});
 
   @override
   State<WeatherCard> createState() => _WeatherCardState();
@@ -49,43 +50,33 @@ class _WeatherCardState extends State<WeatherCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        // Match the glass-dark gradient used by _ActivityCard & _MealList
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xB3292839),
-            Color(0xE61E1E2E),
+    final weatherContent = _loading
+        ? const _LoadingState()
+        : _error != null
+            ? _ErrorState(message: _error!, onRetry: _load)
+            : _WeatherContent(weather: _weather!, onRefresh: _load);
+
+    if (widget.greeting != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: widget.greeting!),
+              const SizedBox(width: 16),
+              Flexible(child: weatherContent),
+            ],
+          ),
+          if (!_loading && _error == null && _weather != null) ...[
+            const SizedBox(height: 20),
+            _WeatherDetails(weather: _weather!),
           ],
-        ),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.15),
-          width: 1,
-        ),
-        boxShadow: [
-          const BoxShadow(
-            color: Color(0x4D000000),
-            blurRadius: 32,
-            spreadRadius: 0,
-            offset: Offset(0, 8),
-          ),
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.06),
-            blurRadius: 24,
-            offset: const Offset(0, 4),
-          ),
         ],
-      ),
-      child: _loading
-          ? const _LoadingState()
-          : _error != null
-              ? _ErrorState(message: _error!, onRetry: _load)
-              : _WeatherContent(weather: _weather!, onRefresh: _load),
-    );
+      );
+    }
+
+    return weatherContent;
   }
 }
 
@@ -96,27 +87,25 @@ class _LoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: AppColors.primary.withValues(alpha: 0.6),
-            ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 14,
+          height: 14,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppColors.primary.withValues(alpha: 0.6),
           ),
-          const SizedBox(width: 12),
-          Text(
-            'Fetching weather...',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                ),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          'Loading...',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.onSurfaceVariant,
+              ),
+        ),
+      ],
     );
   }
 }
@@ -131,32 +120,26 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-      child: Row(
-        children: [
-          const Text('🌡️', style: TextStyle(fontSize: 26)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              message,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                  ),
-            ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Error',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.tertiary,
+              ),
+        ),
+        IconButton(
+          onPressed: onRetry,
+          icon: Icon(
+            Icons.refresh,
+            color: AppColors.tertiary.withValues(alpha: 0.8),
+            size: 16,
           ),
-          IconButton(
-            onPressed: onRetry,
-            icon: Icon(
-              Icons.refresh,
-              color: AppColors.primary.withValues(alpha: 0.5),
-              size: 20,
-            ),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-        ],
-      ),
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
+        ),
+      ],
     );
   }
 }
@@ -171,119 +154,125 @@ class _WeatherContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final suit = weather.suitability;
+    return GestureDetector(
+      onTap: onRefresh,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${weather.temperature.toStringAsFixed(1)}°C',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w800,
+                      shadows: [
+                        Shadow(
+                          color: AppColors.primary.withValues(alpha: 0.5),
+                          blurRadius: 12,
+                        ),
+                      ],
+                    ),
+              ),
+              const SizedBox(width: 8),
+              Text(weather.weatherEmoji, style: const TextStyle(fontSize: 24)),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '${weather.cityName} • ${weather.weatherDescription}',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
+                ),
+            textAlign: TextAlign.right,
+          ),
+          if (weather.forecastMessage != null) ...[
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                weather.forecastMessage!,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
 
-    // Suitability uses app palette colours instead of raw hex
+// ─── Weather Details (Chips & Banner) ─────────────────────────────────────────
+
+class _WeatherDetails extends StatelessWidget {
+  final WeatherData weather;
+
+  const _WeatherDetails({required this.weather});
+
+  @override
+  Widget build(BuildContext context) {
+    final suit = weather.suitability;
     final (Color suitColor, Color suitBg) = switch (suit) {
       ExerciseSuitability.great => (
-          AppColors.secondary,                              // aquamarine
+          AppColors.secondary,                              
           AppColors.secondary.withValues(alpha: 0.12),
         ),
       ExerciseSuitability.fair => (
-          const Color(0xFFFFD166),                         // warm amber
+          const Color(0xFFFFD166),                         
           const Color(0x18FFD166),
         ),
       ExerciseSuitability.poor => (
-          AppColors.tertiary,                               // punch pink
+          AppColors.tertiary,                               
           AppColors.tertiary.withValues(alpha: 0.12),
         ),
     };
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Top row: emoji + temp + refresh ──────────────────────────
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      children: [
+        Row(
+          children: [
+            _Chip(icon: '💧', label: '${weather.humidity.toInt()}%', sublabel: 'Humidity'),
+            const SizedBox(width: 10),
+            _Chip(icon: '💨', label: '${weather.windSpeedKmh.toStringAsFixed(1)} km/h', sublabel: 'Wind'),
+            const SizedBox(width: 10),
+            _Chip(icon: '🌧️', label: '${weather.precipitation.toStringAsFixed(1)} mm', sublabel: 'Rain'),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: suitBg,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: suitColor.withValues(alpha: 0.3), width: 1),
+          ),
+          child: Row(
             children: [
-              Text(weather.weatherEmoji, style: const TextStyle(fontSize: 42)),
-              const SizedBox(width: 14),
+              Text(suit.emoji, style: const TextStyle(fontSize: 15)),
+              const SizedBox(width: 8),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${weather.temperature.toStringAsFixed(1)}°C',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            color: AppColors.onSurface,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.5,
-                          ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Feels like ${weather.apparentTemp.toStringAsFixed(1)}°C  •  ${weather.weatherDescription}',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-              GestureDetector(
-                onTap: onRefresh,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Icon(
-                    Icons.refresh,
-                    color: AppColors.primary.withValues(alpha: 0.4),
-                    size: 18,
-                  ),
+                child: Text(
+                  weather.suitabilityMessage,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: suitColor,
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
               ),
             ],
           ),
-
-          const SizedBox(height: 16),
-
-          // ── Stats chips row ───────────────────────────────────────────
-          Row(
-            children: [
-              _Chip(icon: '💧', label: '${weather.humidity.toInt()}%', sublabel: 'Humidity'),
-              const SizedBox(width: 10),
-              _Chip(
-                  icon: '💨',
-                  label: '${weather.windSpeedKmh.toStringAsFixed(1)} km/h',
-                  sublabel: 'Wind'),
-              const SizedBox(width: 10),
-              _Chip(
-                  icon: '🌧️',
-                  label: '${weather.precipitation.toStringAsFixed(1)} mm',
-                  sublabel: 'Rain'),
-            ],
-          ),
-
-          const SizedBox(height: 14),
-
-          // ── Suitability banner ────────────────────────────────────────
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: suitBg,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: suitColor.withValues(alpha: 0.3), width: 1),
-            ),
-            child: Row(
-              children: [
-                Text(suit.emoji, style: const TextStyle(fontSize: 15)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    suit.label,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: suitColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

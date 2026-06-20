@@ -203,12 +203,10 @@ class DashboardScreen extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    // Greeting
-                    _buildGreeting(context, todayStr),
-                    const SizedBox(height: 20),
-
-                    // Weather Card
-                    const WeatherCard(),
+                    // Greeting & Weather Inline
+                    WeatherCard(
+                      greeting: _buildGreeting(context, todayStr),
+                    ),
                     const SizedBox(height: 28),
 
                     // Calorie Ring + Pill Stats

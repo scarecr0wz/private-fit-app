@@ -428,12 +428,12 @@ class _FoodScreenState extends State<FoodScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Tip Hari Ini',
+                              'Todays Tip',
                               style: Theme.of(context).textTheme.labelMedium?.copyWith(color: AppColors.secondary),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Catat makananmu agar progress terlihat nyata!',
+                              'Record what you eat today!',
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.onSurface, height: 1.5),
                             ),
                           ],
@@ -455,7 +455,7 @@ class _FoodScreenState extends State<FoodScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Cari makanan atau scan barcode',
+                  'Search for food or scan a barcode',
                   style: Theme.of(context).textTheme.titleMedium,
                   textAlign: TextAlign.center,
                 ),
@@ -549,10 +549,10 @@ class _FoodScreenState extends State<FoodScreen> {
           const Icon(Icons.search_off,
               size: 56, color: AppColors.onSurfaceVariant),
           const SizedBox(height: 12),
-          Text('Makanan tidak ditemukan',
+          Text('Food not found',
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 6),
-          Text('Coba kata kunci lain',
+          Text('Try different keywords',
               style: Theme.of(context).textTheme.labelSmall),
         ],
       ),
