@@ -103,7 +103,9 @@ class _Flyover3DScreenState extends State<Flyover3DScreen>
     if (ctrl == null || _route.isEmpty) return;
 
     try {
-      // ── 1. Add terrain DEM source + enable 3D terrain ──────────────
+      // ── 1. Add terrain DEM source (hillshade layer for visual depth) ──────
+      // Note: setTerrain() is not available in maplibre_gl 0.26.2 Flutter binding.
+      // We add a hillshade layer instead for a similar 3D visual effect.
       await ctrl.addSource(
         'terrain-dem',
         RasterDemSourceProperties(
@@ -111,7 +113,13 @@ class _Flyover3DScreenState extends State<Flyover3DScreen>
           tileSize: 256,
         ),
       );
-      await ctrl.setTerrain('terrain-dem', exaggeration: 1.5);
+      await ctrl.addRasterLayer(
+        'terrain-dem',
+        'hillshade-layer',
+        const RasterLayerProperties(
+          rasterOpacity: 0.3,
+        ),
+      );
     } catch (e) {
       debugPrint('Flyover: terrain setup error (non-fatal): $e');
     }
@@ -126,8 +134,6 @@ class _Flyover3DScreenState extends State<Flyover3DScreen>
       lineColor: '#FFFFFF',
       lineWidth: 2.5,
       lineOpacity: 0.25,
-      lineCap: 'round',
-      lineJoin: 'round',
     ));
 
     // ── 3. Start marker (green circle) ──────────────────────────────
@@ -177,9 +183,10 @@ class _Flyover3DScreenState extends State<Flyover3DScreen>
     );
 
     // Add a subtle tilt for the 3D feel after fitting bounds
+    // Note: getCameraPosition() not available in 0.26.2 — use cameraPosition getter
     await Future.delayed(const Duration(milliseconds: 1600));
     if (mounted) {
-      final currentPos = await ctrl.getCameraPosition();
+      final currentPos = ctrl.cameraPosition;
       if (currentPos != null) {
         await ctrl.animateCamera(
           CameraUpdate.newCameraPosition(
@@ -225,8 +232,6 @@ class _Flyover3DScreenState extends State<Flyover3DScreen>
           lineColor: '#FF5252',
           lineWidth: 5.0,
           lineOpacity: 1.0,
-          lineCap: 'round',
-          lineJoin: 'round',
         ));
       }
       _lastDrawnIndex = batchEnd;
@@ -281,8 +286,6 @@ class _Flyover3DScreenState extends State<Flyover3DScreen>
       lineColor: '#FFFFFF',
       lineWidth: 2.5,
       lineOpacity: 0.25,
-      lineCap: 'round',
-      lineJoin: 'round',
     ));
 
     // Reset dot to start
@@ -378,7 +381,7 @@ class _Flyover3DScreenState extends State<Flyover3DScreen>
           // ── Loading overlay ────────────────────────────────────────
           if (!_isStyleLoaded)
             Container(
-              color: Colors.black70,
+              color: const Color(0xB3000000), // ~Colors.black70
               child: const Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -394,7 +397,7 @@ class _Flyover3DScreenState extends State<Flyover3DScreen>
                     ),
                     SizedBox(height: 6),
                     Text(
-                      'Setting up 3D terrain',
+                      'Setting up satellite view',
                       style: TextStyle(color: Colors.white54, fontSize: 13),
                     ),
                   ],
