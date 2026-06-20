@@ -51,9 +51,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          Positioned.fill(
+          const Positioned.fill(
             child: DecoratedBox(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: RadialGradient(
                   center: Alignment(0, 0),
                   radius: 1.5,

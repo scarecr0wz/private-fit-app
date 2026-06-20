@@ -87,12 +87,12 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
             if (isOffline && mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text(
+                const SnackBar(
+                  content: Text(
                     "You are offline, the map won't be loaded correctly but your route will still be recorded",
                   ),
                   backgroundColor: AppColors.error,
-                  duration: const Duration(seconds: 5),
+                  duration: Duration(seconds: 5),
                   behavior: SnackBarBehavior.floating,
                 ),
               );
@@ -601,7 +601,6 @@ class _CountdownOverlay extends StatelessWidget {
     final glow = activityType == OutdoorActivityType.run
         ? const Color(0xFF00C9A7)
         : const Color(0xFF9B96FF);
-    final progress = (5 - count) / 5.0; // 0.0 → 1.0
 
     return Positioned.fill(
       child: Container(

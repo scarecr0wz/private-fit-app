@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:drift/wasm.dart';
+import 'package:flutter/foundation.dart';
 
 DatabaseConnection connect() {
   return DatabaseConnection.delayed(Future(() async {
@@ -10,7 +11,7 @@ DatabaseConnection connect() {
     );
 
     if (result.missingFeatures.isNotEmpty) {
-      print('Using ${result.chosenImplementation} due to missing browser features: ${result.missingFeatures}');
+      debugPrint('Using ${result.chosenImplementation} due to missing browser features: ${result.missingFeatures}');
     }
 
     return result.resolvedExecutor;

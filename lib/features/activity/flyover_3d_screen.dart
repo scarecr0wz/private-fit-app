@@ -313,7 +313,7 @@ class _Flyover3DScreenState extends State<Flyover3DScreen> {
             ),
             duration: const Duration(milliseconds: 250),
           )
-          .catchError((e) {});
+          .catchError((e) => null);
     }
 
     if (mounted) setState(() {});
@@ -803,7 +803,7 @@ class _BottomPanel extends StatelessWidget {
                       child: LinearProgressIndicator(
                         value: progress,
                         backgroundColor: Colors.white.withValues(alpha: 0.12),
-                        valueColor: AlwaysStoppedAnimation<Color>(
+                        valueColor: const AlwaysStoppedAnimation<Color>(
                           AppColors.primary,
                         ),
                         minHeight: 5,
