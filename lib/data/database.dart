@@ -39,6 +39,11 @@ class ActivityLogs extends Table {
   RealColumn get distanceMeters => real()();
   RealColumn get caloriesBurned => real()();
   TextColumn get routePoints => text()();
+  // Weather snapshot at activity start (nullable for backwards compat)
+  RealColumn get weatherTemp => real().nullable()();
+  RealColumn get weatherHumidity => real().nullable()();
+  RealColumn get weatherWindKmh => real().nullable()();
+  IntColumn get weatherCode => integer().nullable()();
 }
 
 class BodyWeights extends Table {
@@ -58,7 +63,20 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(connection.connect());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        // v1 → v2: add weather snapshot columns to activity_logs
+        await m.addColumn(activityLogs, activityLogs.weatherTemp);
+        await m.addColumn(activityLogs, activityLogs.weatherHumidity);
+        await m.addColumn(activityLogs, activityLogs.weatherWindKmh);
+        await m.addColumn(activityLogs, activityLogs.weatherCode);
+      }
+    },
+  );
 }
 
 final db = AppDatabase();

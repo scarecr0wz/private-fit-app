@@ -1352,6 +1352,50 @@ class $ActivityLogsTable extends ActivityLogs
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _weatherTempMeta = const VerificationMeta(
+    'weatherTemp',
+  );
+  @override
+  late final GeneratedColumn<double> weatherTemp = GeneratedColumn<double>(
+    'weather_temp',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _weatherHumidityMeta = const VerificationMeta(
+    'weatherHumidity',
+  );
+  @override
+  late final GeneratedColumn<double> weatherHumidity = GeneratedColumn<double>(
+    'weather_humidity',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _weatherWindKmhMeta = const VerificationMeta(
+    'weatherWindKmh',
+  );
+  @override
+  late final GeneratedColumn<double> weatherWindKmh = GeneratedColumn<double>(
+    'weather_wind_kmh',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _weatherCodeMeta = const VerificationMeta(
+    'weatherCode',
+  );
+  @override
+  late final GeneratedColumn<int> weatherCode = GeneratedColumn<int>(
+    'weather_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1361,6 +1405,10 @@ class $ActivityLogsTable extends ActivityLogs
     distanceMeters,
     caloriesBurned,
     routePoints,
+    weatherTemp,
+    weatherHumidity,
+    weatherWindKmh,
+    weatherCode,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1437,6 +1485,42 @@ class $ActivityLogsTable extends ActivityLogs
     } else if (isInserting) {
       context.missing(_routePointsMeta);
     }
+    if (data.containsKey('weather_temp')) {
+      context.handle(
+        _weatherTempMeta,
+        weatherTemp.isAcceptableOrUnknown(
+          data['weather_temp']!,
+          _weatherTempMeta,
+        ),
+      );
+    }
+    if (data.containsKey('weather_humidity')) {
+      context.handle(
+        _weatherHumidityMeta,
+        weatherHumidity.isAcceptableOrUnknown(
+          data['weather_humidity']!,
+          _weatherHumidityMeta,
+        ),
+      );
+    }
+    if (data.containsKey('weather_wind_kmh')) {
+      context.handle(
+        _weatherWindKmhMeta,
+        weatherWindKmh.isAcceptableOrUnknown(
+          data['weather_wind_kmh']!,
+          _weatherWindKmhMeta,
+        ),
+      );
+    }
+    if (data.containsKey('weather_code')) {
+      context.handle(
+        _weatherCodeMeta,
+        weatherCode.isAcceptableOrUnknown(
+          data['weather_code']!,
+          _weatherCodeMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1474,6 +1558,22 @@ class $ActivityLogsTable extends ActivityLogs
         DriftSqlType.string,
         data['${effectivePrefix}route_points'],
       )!,
+      weatherTemp: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}weather_temp'],
+      ),
+      weatherHumidity: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}weather_humidity'],
+      ),
+      weatherWindKmh: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}weather_wind_kmh'],
+      ),
+      weatherCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}weather_code'],
+      ),
     );
   }
 
@@ -1491,6 +1591,10 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
   final double distanceMeters;
   final double caloriesBurned;
   final String routePoints;
+  final double? weatherTemp;
+  final double? weatherHumidity;
+  final double? weatherWindKmh;
+  final int? weatherCode;
   const ActivityLog({
     required this.id,
     required this.date,
@@ -1499,6 +1603,10 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
     required this.distanceMeters,
     required this.caloriesBurned,
     required this.routePoints,
+    this.weatherTemp,
+    this.weatherHumidity,
+    this.weatherWindKmh,
+    this.weatherCode,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1510,6 +1618,18 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
     map['distance_meters'] = Variable<double>(distanceMeters);
     map['calories_burned'] = Variable<double>(caloriesBurned);
     map['route_points'] = Variable<String>(routePoints);
+    if (!nullToAbsent || weatherTemp != null) {
+      map['weather_temp'] = Variable<double>(weatherTemp);
+    }
+    if (!nullToAbsent || weatherHumidity != null) {
+      map['weather_humidity'] = Variable<double>(weatherHumidity);
+    }
+    if (!nullToAbsent || weatherWindKmh != null) {
+      map['weather_wind_kmh'] = Variable<double>(weatherWindKmh);
+    }
+    if (!nullToAbsent || weatherCode != null) {
+      map['weather_code'] = Variable<int>(weatherCode);
+    }
     return map;
   }
 
@@ -1522,6 +1642,18 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
       distanceMeters: Value(distanceMeters),
       caloriesBurned: Value(caloriesBurned),
       routePoints: Value(routePoints),
+      weatherTemp: weatherTemp == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weatherTemp),
+      weatherHumidity: weatherHumidity == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weatherHumidity),
+      weatherWindKmh: weatherWindKmh == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weatherWindKmh),
+      weatherCode: weatherCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weatherCode),
     );
   }
 
@@ -1538,6 +1670,10 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
       distanceMeters: serializer.fromJson<double>(json['distanceMeters']),
       caloriesBurned: serializer.fromJson<double>(json['caloriesBurned']),
       routePoints: serializer.fromJson<String>(json['routePoints']),
+      weatherTemp: serializer.fromJson<double?>(json['weatherTemp']),
+      weatherHumidity: serializer.fromJson<double?>(json['weatherHumidity']),
+      weatherWindKmh: serializer.fromJson<double?>(json['weatherWindKmh']),
+      weatherCode: serializer.fromJson<int?>(json['weatherCode']),
     );
   }
   @override
@@ -1551,6 +1687,10 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
       'distanceMeters': serializer.toJson<double>(distanceMeters),
       'caloriesBurned': serializer.toJson<double>(caloriesBurned),
       'routePoints': serializer.toJson<String>(routePoints),
+      'weatherTemp': serializer.toJson<double?>(weatherTemp),
+      'weatherHumidity': serializer.toJson<double?>(weatherHumidity),
+      'weatherWindKmh': serializer.toJson<double?>(weatherWindKmh),
+      'weatherCode': serializer.toJson<int?>(weatherCode),
     };
   }
 
@@ -1562,6 +1702,10 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
     double? distanceMeters,
     double? caloriesBurned,
     String? routePoints,
+    Value<double?> weatherTemp = const Value.absent(),
+    Value<double?> weatherHumidity = const Value.absent(),
+    Value<double?> weatherWindKmh = const Value.absent(),
+    Value<int?> weatherCode = const Value.absent(),
   }) => ActivityLog(
     id: id ?? this.id,
     date: date ?? this.date,
@@ -1570,6 +1714,14 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
     distanceMeters: distanceMeters ?? this.distanceMeters,
     caloriesBurned: caloriesBurned ?? this.caloriesBurned,
     routePoints: routePoints ?? this.routePoints,
+    weatherTemp: weatherTemp.present ? weatherTemp.value : this.weatherTemp,
+    weatherHumidity: weatherHumidity.present
+        ? weatherHumidity.value
+        : this.weatherHumidity,
+    weatherWindKmh: weatherWindKmh.present
+        ? weatherWindKmh.value
+        : this.weatherWindKmh,
+    weatherCode: weatherCode.present ? weatherCode.value : this.weatherCode,
   );
   ActivityLog copyWithCompanion(ActivityLogsCompanion data) {
     return ActivityLog(
@@ -1588,6 +1740,18 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
       routePoints: data.routePoints.present
           ? data.routePoints.value
           : this.routePoints,
+      weatherTemp: data.weatherTemp.present
+          ? data.weatherTemp.value
+          : this.weatherTemp,
+      weatherHumidity: data.weatherHumidity.present
+          ? data.weatherHumidity.value
+          : this.weatherHumidity,
+      weatherWindKmh: data.weatherWindKmh.present
+          ? data.weatherWindKmh.value
+          : this.weatherWindKmh,
+      weatherCode: data.weatherCode.present
+          ? data.weatherCode.value
+          : this.weatherCode,
     );
   }
 
@@ -1600,7 +1764,11 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
           ..write('durationSeconds: $durationSeconds, ')
           ..write('distanceMeters: $distanceMeters, ')
           ..write('caloriesBurned: $caloriesBurned, ')
-          ..write('routePoints: $routePoints')
+          ..write('routePoints: $routePoints, ')
+          ..write('weatherTemp: $weatherTemp, ')
+          ..write('weatherHumidity: $weatherHumidity, ')
+          ..write('weatherWindKmh: $weatherWindKmh, ')
+          ..write('weatherCode: $weatherCode')
           ..write(')'))
         .toString();
   }
@@ -1614,6 +1782,10 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
     distanceMeters,
     caloriesBurned,
     routePoints,
+    weatherTemp,
+    weatherHumidity,
+    weatherWindKmh,
+    weatherCode,
   );
   @override
   bool operator ==(Object other) =>
@@ -1625,7 +1797,11 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
           other.durationSeconds == this.durationSeconds &&
           other.distanceMeters == this.distanceMeters &&
           other.caloriesBurned == this.caloriesBurned &&
-          other.routePoints == this.routePoints);
+          other.routePoints == this.routePoints &&
+          other.weatherTemp == this.weatherTemp &&
+          other.weatherHumidity == this.weatherHumidity &&
+          other.weatherWindKmh == this.weatherWindKmh &&
+          other.weatherCode == this.weatherCode);
 }
 
 class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
@@ -1636,6 +1812,10 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
   final Value<double> distanceMeters;
   final Value<double> caloriesBurned;
   final Value<String> routePoints;
+  final Value<double?> weatherTemp;
+  final Value<double?> weatherHumidity;
+  final Value<double?> weatherWindKmh;
+  final Value<int?> weatherCode;
   const ActivityLogsCompanion({
     this.id = const Value.absent(),
     this.date = const Value.absent(),
@@ -1644,6 +1824,10 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
     this.distanceMeters = const Value.absent(),
     this.caloriesBurned = const Value.absent(),
     this.routePoints = const Value.absent(),
+    this.weatherTemp = const Value.absent(),
+    this.weatherHumidity = const Value.absent(),
+    this.weatherWindKmh = const Value.absent(),
+    this.weatherCode = const Value.absent(),
   });
   ActivityLogsCompanion.insert({
     this.id = const Value.absent(),
@@ -1653,6 +1837,10 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
     required double distanceMeters,
     required double caloriesBurned,
     required String routePoints,
+    this.weatherTemp = const Value.absent(),
+    this.weatherHumidity = const Value.absent(),
+    this.weatherWindKmh = const Value.absent(),
+    this.weatherCode = const Value.absent(),
   }) : date = Value(date),
        type = Value(type),
        durationSeconds = Value(durationSeconds),
@@ -1667,6 +1855,10 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
     Expression<double>? distanceMeters,
     Expression<double>? caloriesBurned,
     Expression<String>? routePoints,
+    Expression<double>? weatherTemp,
+    Expression<double>? weatherHumidity,
+    Expression<double>? weatherWindKmh,
+    Expression<int>? weatherCode,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1676,6 +1868,10 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
       if (distanceMeters != null) 'distance_meters': distanceMeters,
       if (caloriesBurned != null) 'calories_burned': caloriesBurned,
       if (routePoints != null) 'route_points': routePoints,
+      if (weatherTemp != null) 'weather_temp': weatherTemp,
+      if (weatherHumidity != null) 'weather_humidity': weatherHumidity,
+      if (weatherWindKmh != null) 'weather_wind_kmh': weatherWindKmh,
+      if (weatherCode != null) 'weather_code': weatherCode,
     });
   }
 
@@ -1687,6 +1883,10 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
     Value<double>? distanceMeters,
     Value<double>? caloriesBurned,
     Value<String>? routePoints,
+    Value<double?>? weatherTemp,
+    Value<double?>? weatherHumidity,
+    Value<double?>? weatherWindKmh,
+    Value<int?>? weatherCode,
   }) {
     return ActivityLogsCompanion(
       id: id ?? this.id,
@@ -1696,6 +1896,10 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
       distanceMeters: distanceMeters ?? this.distanceMeters,
       caloriesBurned: caloriesBurned ?? this.caloriesBurned,
       routePoints: routePoints ?? this.routePoints,
+      weatherTemp: weatherTemp ?? this.weatherTemp,
+      weatherHumidity: weatherHumidity ?? this.weatherHumidity,
+      weatherWindKmh: weatherWindKmh ?? this.weatherWindKmh,
+      weatherCode: weatherCode ?? this.weatherCode,
     );
   }
 
@@ -1723,6 +1927,18 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
     if (routePoints.present) {
       map['route_points'] = Variable<String>(routePoints.value);
     }
+    if (weatherTemp.present) {
+      map['weather_temp'] = Variable<double>(weatherTemp.value);
+    }
+    if (weatherHumidity.present) {
+      map['weather_humidity'] = Variable<double>(weatherHumidity.value);
+    }
+    if (weatherWindKmh.present) {
+      map['weather_wind_kmh'] = Variable<double>(weatherWindKmh.value);
+    }
+    if (weatherCode.present) {
+      map['weather_code'] = Variable<int>(weatherCode.value);
+    }
     return map;
   }
 
@@ -1735,7 +1951,11 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
           ..write('durationSeconds: $durationSeconds, ')
           ..write('distanceMeters: $distanceMeters, ')
           ..write('caloriesBurned: $caloriesBurned, ')
-          ..write('routePoints: $routePoints')
+          ..write('routePoints: $routePoints, ')
+          ..write('weatherTemp: $weatherTemp, ')
+          ..write('weatherHumidity: $weatherHumidity, ')
+          ..write('weatherWindKmh: $weatherWindKmh, ')
+          ..write('weatherCode: $weatherCode')
           ..write(')'))
         .toString();
   }
@@ -2684,6 +2904,10 @@ typedef $$ActivityLogsTableCreateCompanionBuilder =
       required double distanceMeters,
       required double caloriesBurned,
       required String routePoints,
+      Value<double?> weatherTemp,
+      Value<double?> weatherHumidity,
+      Value<double?> weatherWindKmh,
+      Value<int?> weatherCode,
     });
 typedef $$ActivityLogsTableUpdateCompanionBuilder =
     ActivityLogsCompanion Function({
@@ -2694,6 +2918,10 @@ typedef $$ActivityLogsTableUpdateCompanionBuilder =
       Value<double> distanceMeters,
       Value<double> caloriesBurned,
       Value<String> routePoints,
+      Value<double?> weatherTemp,
+      Value<double?> weatherHumidity,
+      Value<double?> weatherWindKmh,
+      Value<int?> weatherCode,
     });
 
 class $$ActivityLogsTableFilterComposer
@@ -2737,6 +2965,26 @@ class $$ActivityLogsTableFilterComposer
 
   ColumnFilters<String> get routePoints => $composableBuilder(
     column: $table.routePoints,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get weatherTemp => $composableBuilder(
+    column: $table.weatherTemp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get weatherHumidity => $composableBuilder(
+    column: $table.weatherHumidity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get weatherWindKmh => $composableBuilder(
+    column: $table.weatherWindKmh,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get weatherCode => $composableBuilder(
+    column: $table.weatherCode,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -2784,6 +3032,26 @@ class $$ActivityLogsTableOrderingComposer
     column: $table.routePoints,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get weatherTemp => $composableBuilder(
+    column: $table.weatherTemp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get weatherHumidity => $composableBuilder(
+    column: $table.weatherHumidity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get weatherWindKmh => $composableBuilder(
+    column: $table.weatherWindKmh,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get weatherCode => $composableBuilder(
+    column: $table.weatherCode,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ActivityLogsTableAnnotationComposer
@@ -2821,6 +3089,26 @@ class $$ActivityLogsTableAnnotationComposer
 
   GeneratedColumn<String> get routePoints => $composableBuilder(
     column: $table.routePoints,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get weatherTemp => $composableBuilder(
+    column: $table.weatherTemp,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get weatherHumidity => $composableBuilder(
+    column: $table.weatherHumidity,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get weatherWindKmh => $composableBuilder(
+    column: $table.weatherWindKmh,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get weatherCode => $composableBuilder(
+    column: $table.weatherCode,
     builder: (column) => column,
   );
 }
@@ -2863,6 +3151,10 @@ class $$ActivityLogsTableTableManager
                 Value<double> distanceMeters = const Value.absent(),
                 Value<double> caloriesBurned = const Value.absent(),
                 Value<String> routePoints = const Value.absent(),
+                Value<double?> weatherTemp = const Value.absent(),
+                Value<double?> weatherHumidity = const Value.absent(),
+                Value<double?> weatherWindKmh = const Value.absent(),
+                Value<int?> weatherCode = const Value.absent(),
               }) => ActivityLogsCompanion(
                 id: id,
                 date: date,
@@ -2871,6 +3163,10 @@ class $$ActivityLogsTableTableManager
                 distanceMeters: distanceMeters,
                 caloriesBurned: caloriesBurned,
                 routePoints: routePoints,
+                weatherTemp: weatherTemp,
+                weatherHumidity: weatherHumidity,
+                weatherWindKmh: weatherWindKmh,
+                weatherCode: weatherCode,
               ),
           createCompanionCallback:
               ({
@@ -2881,6 +3177,10 @@ class $$ActivityLogsTableTableManager
                 required double distanceMeters,
                 required double caloriesBurned,
                 required String routePoints,
+                Value<double?> weatherTemp = const Value.absent(),
+                Value<double?> weatherHumidity = const Value.absent(),
+                Value<double?> weatherWindKmh = const Value.absent(),
+                Value<int?> weatherCode = const Value.absent(),
               }) => ActivityLogsCompanion.insert(
                 id: id,
                 date: date,
@@ -2889,6 +3189,10 @@ class $$ActivityLogsTableTableManager
                 distanceMeters: distanceMeters,
                 caloriesBurned: caloriesBurned,
                 routePoints: routePoints,
+                weatherTemp: weatherTemp,
+                weatherHumidity: weatherHumidity,
+                weatherWindKmh: weatherWindKmh,
+                weatherCode: weatherCode,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

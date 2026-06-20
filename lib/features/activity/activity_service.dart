@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import '../../data/database.dart';
+import '../weather/weather_service.dart';
 
 enum ActivityState { idle, countdown, running, paused }
 
@@ -51,6 +52,9 @@ class ActivityService extends ChangeNotifier {
   double elevationGain = 0.0;
   double _currentBaselineAlt = 0.0;
   static const double _elevationThreshold = 2.0; // Filter noise 2 meter
+
+  // Weather snapshot saat activity dimulai
+  WeatherData? _weatherSnapshot;
 
   // Countdown state
   int countdownValue = 5;
@@ -124,6 +128,11 @@ class ActivityService extends ChangeNotifier {
         altitudePerPoint.add(pos.altitude);
         _currentBaselineAlt = pos.altitude;
         _routeData.add(_RoutePointData(point: startPoint, time: now, altitude: pos.altitude));
+
+        // Snapshot cuaca di lokasi start (fire-and-forget)
+        WeatherService.instance.fetchForLocation(pos.latitude, pos.longitude).then((w) {
+          _weatherSnapshot = w;
+        });
       } catch (_) {}
     }
     _lastStartTime ??= DateTime.now();
@@ -304,6 +313,10 @@ class ActivityService extends ChangeNotifier {
               distanceMeters: distanceKm * 1000,
               caloriesBurned: calories.toDouble(),
               routePoints: routeJson,
+              weatherTemp: Value(_weatherSnapshot?.temperature),
+              weatherHumidity: Value(_weatherSnapshot?.humidity),
+              weatherWindKmh: Value(_weatherSnapshot?.windSpeedKmh),
+              weatherCode: Value(_weatherSnapshot?.weatherCode),
             ),
           );
     }
@@ -317,6 +330,7 @@ class ActivityService extends ChangeNotifier {
     speedDisplay = "0'00\"";
     elevationGain = 0.0;
     _currentBaselineAlt = 0.0;
+    _weatherSnapshot = null;
     routePoints.clear();
     pacePerPoint.clear();
     altitudePerPoint.clear();

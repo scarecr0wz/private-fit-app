@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.8.0] - 2026-06-20
+
+### Added
+- **Weather System**: Integrated [Open-Meteo](https://open-meteo.com/) free weather API (no API key required).
+- **Dashboard**: New glassmorphism weather card showing:
+  - Current temperature, feels-like temperature, and weather description (WMO code → emoji + label)
+  - Humidity, wind speed, and precipitation chips
+  - Color-coded "Exercise Suitability" banner: 💪 Great / ⚠️ Fair / 🚫 Poor — based on temperature, rain, wind, and humidity thresholds
+  - Refresh button; auto-refreshes every 15 minutes (cached to avoid spam)
+- **Activity Recording**: Weather snapshot automatically captured at GPS start position when an outdoor activity begins. Saved silently in the background without blocking the start flow.
+- **Activity Detail Screen**: New "Weather During Activity" section displayed below the Elevation Profile, showing the weather that was recorded at activity start time — weather emoji, temperature, wind speed, and humidity.
+- **Database Migration**: `ActivityLogs` table migrated from schema v1 → v2 with 4 new nullable columns: `weatherTemp`, `weatherHumidity`, `weatherWindKmh`, `weatherCode`. Old activity records are preserved (columns default to null).
+
+### Technical
+- New `WeatherService` singleton (`lib/features/weather/weather_service.dart`) with 15-minute in-memory cache and graceful fallback on network errors.
+- `WmoWeather` helper class maps WMO weather codes to emoji and description strings.
+- `ExerciseSuitability` enum with scoring logic: Poor if thunderstorm / temp >35°C or <5°C / wind >50 km/h / rain >5mm; Fair if rain / temp >30°C / wind >30 km/h / humidity >80%; otherwise Great.
+
 ## [1.7.2] - 2026-06-20
 
 ### Changed

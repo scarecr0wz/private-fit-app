@@ -6,6 +6,7 @@ import '../../theme.dart';
 import '../../shared/widgets/calorie_ring.dart';
 import 'dashboard_dummy.dart';
 import '../../data/database.dart';
+import '../weather/weather_card.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -204,6 +205,10 @@ class DashboardScreen extends StatelessWidget {
                   delegate: SliverChildListDelegate([
                     // Greeting
                     _buildGreeting(context, todayStr),
+                    const SizedBox(height: 20),
+
+                    // Weather Card
+                    const WeatherCard(),
                     const SizedBox(height: 28),
 
                     // Calorie Ring + Pill Stats
