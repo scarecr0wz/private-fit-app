@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:latlong2/latlong.dart' as ll;
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
@@ -15,31 +16,25 @@ class Flyover3DScreen extends StatefulWidget {
   State<Flyover3DScreen> createState() => _Flyover3DScreenState();
 }
 
-class _Flyover3DScreenState extends State<Flyover3DScreen>
-    with SingleTickerProviderStateMixin {
+class _Flyover3DScreenState extends State<Flyover3DScreen> {
   MapLibreMapController? _mapController;
   final List<ll.LatLng> _route = [];
 
   bool _isPlaying = false;
   bool _isStyleLoaded = false;
+  bool _isResetting = false; // prevent concurrent resets
 
-  late AnimationController _animationController;
+  // Periodic timer drives the animation (safer than AnimationController listener)
+  Timer? _playTimer;
+  int _currentIndex = 0;
+  static const int _pointsPerTick = 3; // how many points to draw per tick
+  static const Duration _tickInterval = Duration(milliseconds: 80);
 
-  // Track the last drawn point index so we only add NEW segments each tick
-  int _lastDrawnIndex = 0;
-
-  // The moving "current position" dot symbol
   Symbol? _progressDot;
 
   static const String _mapTilerKey = 'KV6n4yl6DjwIdqdqA9NM';
-
-  // Satellite (hybrid = satellite tiles + road/label overlay)
   static const String _styleUrl =
       'https://api.maptiler.com/maps/hybrid/style.json?key=$_mapTilerKey';
-
-  // MapTiler terrain DEM source
-  static const String _terrainUrl =
-      'https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json?key=$_mapTilerKey';
 
   // ──────────────────────────────────────────────
   // Lifecycle
@@ -49,25 +44,11 @@ class _Flyover3DScreenState extends State<Flyover3DScreen>
   void initState() {
     super.initState();
     _parseRoute();
-
-    // Duration: ~30 s for a short route, scales with point count
-    final durationSec = math.max(20, _route.length ~/ 3);
-    _animationController = AnimationController(
-      vsync: this,
-      duration: Duration(seconds: durationSec),
-    );
-    _animationController.addListener(_onAnimationTick);
-    _animationController.addStatusListener((status) {
-      if (status == AnimationStatus.completed && mounted) {
-        setState(() => _isPlaying = false);
-      }
-    });
   }
 
   @override
   void dispose() {
-    _animationController.removeListener(_onAnimationTick);
-    _animationController.dispose();
+    _playTimer?.cancel();
     super.dispose();
   }
 
@@ -102,206 +83,228 @@ class _Flyover3DScreenState extends State<Flyover3DScreen>
     final ctrl = _mapController;
     if (ctrl == null || _route.isEmpty) return;
 
+    // ── 1. Ghost route (full, dim) ───────────────────────────────────
     try {
-      // ── 1. Add terrain DEM source (hillshade layer for visual depth) ──────
-      // Note: setTerrain() is not available in maplibre_gl 0.26.2 Flutter binding.
-      // We add a hillshade layer instead for a similar 3D visual effect.
-      await ctrl.addSource(
-        'terrain-dem',
-        RasterDemSourceProperties(
-          url: _terrainUrl,
-          tileSize: 256,
-        ),
-      );
-      await ctrl.addRasterLayer(
-        'terrain-dem',
-        'hillshade-layer',
-        const RasterLayerProperties(
-          rasterOpacity: 0.3,
-        ),
-      );
+      await ctrl.addLine(LineOptions(
+        geometry: _route.map((p) => LatLng(p.latitude, p.longitude)).toList(),
+        lineColor: '#FFFFFF',
+        lineWidth: 2.0,
+        lineOpacity: 0.2,
+      ));
     } catch (e) {
-      debugPrint('Flyover: terrain setup error (non-fatal): $e');
+      debugPrint('Flyover: addLine ghost error: $e');
     }
 
-    // ── 2. Draw full route as a dim ghost line ───────────────────────
-    final fullGeom = _route
-        .map((p) => LatLng(p.latitude, p.longitude))
-        .toList();
+    // ── 2. Start & Finish symbols ────────────────────────────────────
+    try {
+      await ctrl.addSymbol(SymbolOptions(
+        geometry: LatLng(_route.first.latitude, _route.first.longitude),
+        textField: '▶',
+        textColor: '#00E676',
+        textSize: 20,
+        textHaloColor: '#000000',
+        textHaloWidth: 2.0,
+        textAnchor: 'center',
+      ));
+      await ctrl.addSymbol(SymbolOptions(
+        geometry: LatLng(_route.last.latitude, _route.last.longitude),
+        textField: '■',
+        textColor: '#FF1744',
+        textSize: 20,
+        textHaloColor: '#000000',
+        textHaloWidth: 2.0,
+        textAnchor: 'center',
+      ));
+    } catch (e) {
+      debugPrint('Flyover: addSymbol marker error: $e');
+    }
 
-    await ctrl.addLine(LineOptions(
-      geometry: fullGeom,
-      lineColor: '#FFFFFF',
-      lineWidth: 2.5,
-      lineOpacity: 0.25,
-    ));
+    // ── 3. Progress dot at start ─────────────────────────────────────
+    try {
+      _progressDot = await ctrl.addSymbol(SymbolOptions(
+        geometry: LatLng(_route.first.latitude, _route.first.longitude),
+        textField: '●',
+        textColor: '#FFFFFF',
+        textSize: 16,
+        textHaloColor: '#FF5252',
+        textHaloWidth: 4.0,
+        textAnchor: 'center',
+      ));
+    } catch (e) {
+      debugPrint('Flyover: addSymbol dot error: $e');
+    }
 
-    // ── 3. Start marker (green circle) ──────────────────────────────
-    await ctrl.addSymbol(SymbolOptions(
-      geometry: LatLng(_route.first.latitude, _route.first.longitude),
-      textField: '▶',
-      textColor: '#00E676',
-      textSize: 20,
-      textHaloColor: '#000000',
-      textHaloWidth: 2.0,
-      textAnchor: 'center',
-    ));
-
-    // ── 4. Finish marker (red square) ───────────────────────────────
-    await ctrl.addSymbol(SymbolOptions(
-      geometry: LatLng(_route.last.latitude, _route.last.longitude),
-      textField: '⏹',
-      textColor: '#FF1744',
-      textSize: 20,
-      textHaloColor: '#000000',
-      textHaloWidth: 2.0,
-      textAnchor: 'center',
-    ));
-
-    // ── 5. Animated "head" dot ──────────────────────────────────────
-    _progressDot = await ctrl.addSymbol(SymbolOptions(
-      geometry: LatLng(_route.first.latitude, _route.first.longitude),
-      textField: '⬤',
-      textColor: '#FFFFFF',
-      textSize: 14,
-      textHaloColor: '#FF5252',
-      textHaloWidth: 4.0,
-      textAnchor: 'center',
-    ));
-
-    // ── 6. Fit camera to the full route bounds (stationary, slight tilt) ──
-    final bounds = _computeBounds();
-    await ctrl.animateCamera(
-      CameraUpdate.newLatLngBounds(
-        bounds,
-        left: 60,
-        top: 120,
-        right: 60,
-        bottom: 140,
-      ),
-      duration: const Duration(milliseconds: 1500),
-    );
-
-    // Add a subtle tilt for the 3D feel after fitting bounds
-    // Note: getCameraPosition() not available in 0.26.2 — use cameraPosition getter
-    await Future.delayed(const Duration(milliseconds: 1600));
-    if (mounted) {
-      final currentPos = ctrl.cameraPosition;
-      if (currentPos != null) {
-        await ctrl.animateCamera(
-          CameraUpdate.newCameraPosition(
-            CameraPosition(
-              target: currentPos.target,
-              zoom: (currentPos.zoom ?? 13) - 0.3,
-              tilt: 40.0,
-              bearing: currentPos.bearing ?? 0,
-            ),
-          ),
-          duration: const Duration(milliseconds: 800),
-        );
-      }
+    // ── 4. Fit camera to route bounds ────────────────────────────────
+    try {
+      final bounds = _computeBounds();
+      await ctrl.animateCamera(
+        CameraUpdate.newLatLngBounds(
+          bounds,
+          left: 60,
+          top: 120,
+          right: 60,
+          bottom: 140,
+        ),
+        duration: const Duration(milliseconds: 1500),
+      );
+    } catch (e) {
+      debugPrint('Flyover: fitBounds error: $e');
     }
 
     if (mounted) setState(() => _isStyleLoaded = true);
   }
 
   // ──────────────────────────────────────────────
-  // Animation
+  // Animation — driven by Timer, NOT AnimationController
+  // (safer for async platform calls)
   // ──────────────────────────────────────────────
 
-  void _onAnimationTick() {
+  void _startTimer() {
+    _playTimer?.cancel();
+    _playTimer = Timer.periodic(_tickInterval, (_) => _tick());
+  }
+
+  void _stopTimer() {
+    _playTimer?.cancel();
+    _playTimer = null;
+  }
+
+  Future<void> _tick() async {
     final ctrl = _mapController;
-    if (ctrl == null || _route.isEmpty || !_isStyleLoaded) return;
+    if (ctrl == null || !_isStyleLoaded || !mounted) {
+      _stopTimer();
+      return;
+    }
 
-    final progress = _animationController.value;
-    final targetIndex =
-        (progress * (_route.length - 1)).floor().clamp(0, _route.length - 1);
+    if (_currentIndex >= _route.length - 1) {
+      // Reached the end
+      _stopTimer();
+      if (mounted) setState(() => _isPlaying = false);
+      return;
+    }
 
-    // Draw new segments from _lastDrawnIndex to targetIndex
-    if (targetIndex > _lastDrawnIndex && _lastDrawnIndex < _route.length - 1) {
-      // Batch multiple points into one line call to reduce MapLibre calls
-      final batchEnd = math.min(targetIndex, _lastDrawnIndex + 8);
+    // Draw next batch of segments
+    final batchEnd =
+        math.min(_route.length - 1, _currentIndex + _pointsPerTick);
+
+    if (batchEnd > _currentIndex) {
       final segPoints = _route
-          .sublist(_lastDrawnIndex, batchEnd + 1)
+          .sublist(_currentIndex, batchEnd + 1)
           .map((p) => LatLng(p.latitude, p.longitude))
           .toList();
 
       if (segPoints.length >= 2) {
-        ctrl.addLine(LineOptions(
-          geometry: segPoints,
-          lineColor: '#FF5252',
-          lineWidth: 5.0,
-          lineOpacity: 1.0,
-        ));
+        try {
+          await ctrl.addLine(LineOptions(
+            geometry: segPoints,
+            lineColor: '#FF5252',
+            lineWidth: 5.0,
+            lineOpacity: 1.0,
+          ));
+        } catch (e) {
+          debugPrint('Flyover: addLine segment error: $e');
+        }
       }
-      _lastDrawnIndex = batchEnd;
     }
 
-    // Move the progress dot to the current head position
+    _currentIndex = batchEnd;
+
+    // Update progress dot
     final dot = _progressDot;
-    if (dot != null && targetIndex < _route.length) {
-      ctrl.updateSymbol(
-        dot,
-        SymbolOptions(
-          geometry: LatLng(
-            _route[targetIndex].latitude,
-            _route[targetIndex].longitude,
+    if (dot != null) {
+      try {
+        await ctrl.updateSymbol(
+          dot,
+          SymbolOptions(
+            geometry: LatLng(
+              _route[_currentIndex].latitude,
+              _route[_currentIndex].longitude,
+            ),
           ),
-        ),
-      );
+        );
+      } catch (e) {
+        debugPrint('Flyover: updateSymbol error: $e');
+      }
     }
+
+    // Update progress UI
+    if (mounted) setState(() {});
   }
 
   // ──────────────────────────────────────────────
   // Controls
   // ──────────────────────────────────────────────
 
-  void _togglePlay() {
-    if (!_isStyleLoaded) return;
-    setState(() {
-      _isPlaying = !_isPlaying;
-      if (_isPlaying) {
-        if (_animationController.isCompleted) {
-          _resetAnimation();
-          return;
-        }
-        _animationController.forward();
+  Future<void> _togglePlay() async {
+    if (!_isStyleLoaded || _isResetting) return;
+
+    if (_isPlaying) {
+      // Pause
+      _stopTimer();
+      setState(() => _isPlaying = false);
+    } else {
+      // Play or replay from end
+      if (_currentIndex >= _route.length - 1) {
+        await _resetAndPlay();
       } else {
-        _animationController.stop();
+        setState(() => _isPlaying = true);
+        _startTimer();
       }
-    });
+    }
   }
 
-  Future<void> _resetAnimation() async {
+  Future<void> _resetAndPlay() async {
     final ctrl = _mapController;
-    if (ctrl == null) return;
+    if (ctrl == null || _isResetting) return;
 
-    _animationController.reset();
-    _lastDrawnIndex = 0;
+    setState(() {
+      _isResetting = true;
+      _isPlaying = false;
+    });
 
-    // Clear all lines and re-draw ghost route
-    await ctrl.clearLines();
-    await ctrl.addLine(LineOptions(
-      geometry: _route.map((p) => LatLng(p.latitude, p.longitude)).toList(),
-      lineColor: '#FFFFFF',
-      lineWidth: 2.5,
-      lineOpacity: 0.25,
-    ));
+    _stopTimer();
 
-    // Reset dot to start
-    final dot = _progressDot;
-    if (dot != null) {
-      await ctrl.updateSymbol(
-        dot,
-        SymbolOptions(
-          geometry: LatLng(_route.first.latitude, _route.first.longitude),
-        ),
-      );
+    try {
+      await ctrl.clearLines();
+    } catch (e) {
+      debugPrint('Flyover: clearLines error: $e');
     }
 
+    // Re-add ghost route
+    try {
+      await ctrl.addLine(LineOptions(
+        geometry: _route.map((p) => LatLng(p.latitude, p.longitude)).toList(),
+        lineColor: '#FFFFFF',
+        lineWidth: 2.0,
+        lineOpacity: 0.2,
+      ));
+    } catch (e) {
+      debugPrint('Flyover: re-add ghost error: $e');
+    }
+
+    // Reset dot
+    final dot = _progressDot;
+    if (dot != null) {
+      try {
+        await ctrl.updateSymbol(
+          dot,
+          SymbolOptions(
+            geometry: LatLng(_route.first.latitude, _route.first.longitude),
+          ),
+        );
+      } catch (e) {
+        debugPrint('Flyover: reset dot error: $e');
+      }
+    }
+
+    _currentIndex = 0;
+
     if (mounted) {
-      setState(() => _isPlaying = true);
-      _animationController.forward();
+      setState(() {
+        _isResetting = false;
+        _isPlaying = true;
+      });
+      _startTimer();
     }
   }
 
@@ -328,13 +331,12 @@ class _Flyover3DScreenState extends State<Flyover3DScreen>
     );
   }
 
-  String _progressLabel() {
-    if (_route.isEmpty) return '';
-    final idx = (_animationController.value * (_route.length - 1))
-        .floor()
-        .clamp(0, _route.length - 1);
-    final pct = ((_animationController.value) * 100).toStringAsFixed(0);
-    return '$pct%  (${idx + 1}/${_route.length} pts)';
+  double get _progress =>
+      _route.isEmpty ? 0.0 : _currentIndex / (_route.length - 1);
+
+  String get _progressLabel {
+    final pct = (_progress * 100).toStringAsFixed(0);
+    return '$pct%  (${_currentIndex + 1}/${_route.length} pts)';
   }
 
   // ──────────────────────────────────────────────
@@ -343,6 +345,9 @@ class _Flyover3DScreenState extends State<Flyover3DScreen>
 
   @override
   Widget build(BuildContext context) {
+    final bool atEnd =
+        _route.isNotEmpty && _currentIndex >= _route.length - 1;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       extendBodyBehindAppBar: true,
@@ -355,17 +360,17 @@ class _Flyover3DScreenState extends State<Flyover3DScreen>
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
-          if (_isStyleLoaded)
+          if (_isStyleLoaded && !_isResetting)
             IconButton(
               icon: const Icon(Icons.replay, color: Colors.white),
               tooltip: 'Replay from start',
-              onPressed: _resetAnimation,
+              onPressed: _resetAndPlay,
             ),
         ],
       ),
       body: Stack(
         children: [
-          // ── Map ────────────────────────────────────────────────────
+          // ── Map ──────────────────────────────────────────────────────
           MapLibreMap(
             styleString: _styleUrl,
             onMapCreated: _onMapCreated,
@@ -378,10 +383,10 @@ class _Flyover3DScreenState extends State<Flyover3DScreen>
             ),
           ),
 
-          // ── Loading overlay ────────────────────────────────────────
+          // ── Loading overlay ───────────────────────────────────────────
           if (!_isStyleLoaded)
             Container(
-              color: const Color(0xB3000000), // ~Colors.black70
+              color: const Color(0xB3000000),
               child: const Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -391,21 +396,26 @@ class _Flyover3DScreenState extends State<Flyover3DScreen>
                     Text(
                       'Loading satellite map…',
                       style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500),
-                    ),
-                    SizedBox(height: 6),
-                    Text(
-                      'Setting up satellite view',
-                      style: TextStyle(color: Colors.white54, fontSize: 13),
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
 
-          // ── Progress bar ───────────────────────────────────────────
+          // ── Resetting overlay ─────────────────────────────────────────
+          if (_isResetting)
+            Container(
+              color: const Color(0x80000000),
+              child: const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+            ),
+
+          // ── Progress bar ──────────────────────────────────────────────
           if (_isStyleLoaded)
             Positioned(
               bottom: 108,
@@ -414,50 +424,51 @@ class _Flyover3DScreenState extends State<Flyover3DScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  AnimatedBuilder(
-                    animation: _animationController,
-                    builder: (_, __) => Text(
-                      _progressLabel(),
-                      style: const TextStyle(
-                          color: Colors.white70, fontSize: 11),
-                    ),
+                  Text(
+                    _progressLabel,
+                    style: const TextStyle(color: Colors.white70, fontSize: 11),
                   ),
                   const SizedBox(height: 4),
-                  AnimatedBuilder(
-                    animation: _animationController,
-                    builder: (_, __) => ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: _animationController.value,
-                        backgroundColor: Colors.white24,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(AppColors.primary),
-                        minHeight: 5,
-                      ),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: _progress,
+                      backgroundColor: Colors.white24,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      minHeight: 5,
                     ),
                   ),
                 ],
               ),
             ),
 
-          // ── Play / Pause button ────────────────────────────────────
+          // ── Play / Pause / Replay button ──────────────────────────────
           Positioned(
             bottom: 40,
             left: 0,
             right: 0,
             child: Center(
               child: FloatingActionButton.extended(
-                onPressed: _isStyleLoaded ? _togglePlay : null,
-                backgroundColor:
-                    _isStyleLoaded ? AppColors.primary : Colors.grey.shade700,
+                onPressed:
+                    (_isStyleLoaded && !_isResetting) ? _togglePlay : null,
+                backgroundColor: _isStyleLoaded && !_isResetting
+                    ? (atEnd ? Colors.orange : AppColors.primary)
+                    : Colors.grey.shade700,
                 elevation: 8,
                 icon: Icon(
-                  _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                  atEnd
+                      ? Icons.replay
+                      : (_isPlaying
+                          ? Icons.pause_rounded
+                          : Icons.play_arrow_rounded),
                   color: Colors.white,
                   size: 26,
                 ),
                 label: Text(
-                  _isPlaying ? 'Pause' : 'Play Route',
+                  atEnd
+                      ? 'Replay'
+                      : (_isPlaying ? 'Pause' : 'Play Route'),
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
