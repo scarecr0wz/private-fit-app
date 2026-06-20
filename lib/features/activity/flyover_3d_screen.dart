@@ -15,31 +15,40 @@ class Flyover3DScreen extends StatefulWidget {
   State<Flyover3DScreen> createState() => _Flyover3DScreenState();
 }
 
-class _Flyover3DScreenState extends State<Flyover3DScreen> with SingleTickerProviderStateMixin {
+class _Flyover3DScreenState extends State<Flyover3DScreen>
+    with SingleTickerProviderStateMixin {
   MapLibreMapController? _mapController;
   final List<ll.LatLng> _route = [];
   bool _isPlaying = false;
-  
+  bool _isStyleLoaded = false;
+
   late AnimationController _animationController;
-  
+
+  // Throttle camera/geojson updates so we don't flood MapLibre
+  int _lastUpdatedIndex = -1;
+
   static const String mapTilerKey = 'KV6n4yl6DjwIdqdqA9NM';
-  static const String styleUrl = 'https://api.maptiler.com/maps/outdoor-v2/style.json?key=$mapTilerKey';
+  static const String styleUrl =
+      'https://api.maptiler.com/maps/outdoor-v2/style.json?key=$mapTilerKey';
 
   @override
   void initState() {
     super.initState();
     _parseRoute();
+
+    // Duration in seconds: min 15s, max based on route length
+    final durationSec = math.max(15, _route.length ~/ 3);
     _animationController = AnimationController(
       vsync: this,
-      duration: Duration(seconds: math.max(10, _route.length ~/ 2)), // Dynamic duration
+      duration: Duration(seconds: durationSec),
     );
+
     _animationController.addListener(_onAnimationTick);
-    
     _animationController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        setState(() {
-          _isPlaying = false;
-        });
+        if (mounted) {
+          setState(() => _isPlaying = false);
+        }
       }
     });
   }
@@ -49,7 +58,7 @@ class _Flyover3DScreenState extends State<Flyover3DScreen> with SingleTickerProv
       try {
         final decoded = jsonDecode(widget.activity.routePoints) as List;
         for (final p in decoded) {
-          _route.add(ll.LatLng(p['lat'], p['lng']));
+          _route.add(ll.LatLng(p['lat'] as double, p['lng'] as double));
         }
       } catch (_) {}
     }
@@ -59,41 +68,63 @@ class _Flyover3DScreenState extends State<Flyover3DScreen> with SingleTickerProv
     _mapController = controller;
   }
 
-  void _onStyleLoaded() async {
-    
-    // Setup line layer
-    await _mapController?.addSource("route-source", const GeojsonSourceProperties(
-      data: {
-        "type": "Feature",
-        "geometry": {
-          "type": "LineString",
-          "coordinates": []
-        }
-      }
-    ));
-    
-    await _mapController?.addLineLayer(
-      "route-source",
-      "route-layer",
-      const LineLayerProperties(
-        lineColor: "#FF5252", // AppColors.primary roughly
-        lineWidth: 6.0,
-        lineCap: "round",
-        lineJoin: "round",
-      ),
-    );
+  Future<void> _onStyleLoaded() async {
+    if (_mapController == null) return;
 
-    // Initial camera position
-    if (_route.isNotEmpty) {
-      await _mapController?.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: LatLng(_route.first.latitude, _route.first.longitude),
-            zoom: 15.0,
-            tilt: 60.0,
-          )
+    // Build the full route as GeoJSON coordinates
+    final coords = _route
+        .map((p) => [p.longitude, p.latitude])
+        .toList();
+
+    // Add GeoJSON source with the full route (we'll reveal it progressively)
+    try {
+      await _mapController!.addSource(
+        'route-source',
+        GeojsonSourceProperties(
+          data: {
+            'type': 'Feature',
+            'geometry': {
+              'type': 'LineString',
+              'coordinates': coords.isNotEmpty ? [coords.first] : [],
+            }
+          },
         ),
       );
+
+      await _mapController!.addLineLayer(
+        'route-source',
+        'route-layer',
+        const LineLayerProperties(
+          lineColor: '#FF5252',
+          lineWidth: 6.0,
+          lineCap: 'round',
+          lineJoin: 'round',
+        ),
+      );
+    } catch (e) {
+      debugPrint('Flyover: addSource/addLayer error: $e');
+    }
+
+    // Fly camera to start of route
+    if (_route.isNotEmpty) {
+      try {
+        await _mapController!.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: LatLng(_route.first.latitude, _route.first.longitude),
+              zoom: 16.0,
+              tilt: 60.0,
+            ),
+          ),
+          duration: const Duration(milliseconds: 1500),
+        );
+      } catch (e) {
+        debugPrint('Flyover: initial camera error: $e');
+      }
+    }
+
+    if (mounted) {
+      setState(() => _isStyleLoaded = true);
     }
   }
 
@@ -104,56 +135,64 @@ class _Flyover3DScreenState extends State<Flyover3DScreen> with SingleTickerProv
     final endLng = end.longitude * math.pi / 180.0;
 
     final dLng = endLng - startLng;
-
     final y = math.sin(dLng) * math.cos(endLat);
     final x = math.cos(startLat) * math.sin(endLat) -
         math.sin(startLat) * math.cos(endLat) * math.cos(dLng);
 
-    final bearing = math.atan2(y, x) * 180.0 / math.pi;
-    return (bearing + 360.0) % 360.0;
+    return (math.atan2(y, x) * 180.0 / math.pi + 360.0) % 360.0;
   }
 
-  void _onAnimationTick() async {
-    if (_mapController == null || _route.isEmpty) return;
-    
+  void _onAnimationTick() {
+    if (_mapController == null || _route.isEmpty || !_isStyleLoaded) return;
+
     final progress = _animationController.value;
-    final currentIndex = (progress * (_route.length - 1)).floor();
-    
-    // Draw line up to currentIndex
-    final coordinates = _route.take(currentIndex + 1).map((p) => [p.longitude, p.latitude]).toList();
-    
-    await _mapController?.setGeoJsonSource("route-source", {
-      "type": "Feature",
-      "geometry": {
-        "type": "LineString",
-        "coordinates": coordinates
+    final currentIndex = (progress * (_route.length - 1)).floor().clamp(0, _route.length - 1);
+
+    // Throttle: only update when index actually changes
+    if (currentIndex == _lastUpdatedIndex) return;
+    _lastUpdatedIndex = currentIndex;
+
+    // Update the drawn route line
+    final coordinates = _route
+        .take(currentIndex + 1)
+        .map((p) => [p.longitude, p.latitude])
+        .toList();
+
+    _mapController!.setGeoJsonSource('route-source', {
+      'type': 'Feature',
+      'geometry': {
+        'type': 'LineString',
+        'coordinates': coordinates,
       }
     });
 
-    // Update camera
+    // Move camera along the route
     if (currentIndex < _route.length - 1) {
       final currentPoint = _route[currentIndex];
       final nextPoint = _route[currentIndex + 1];
       final bearing = _getBearing(currentPoint, nextPoint);
-      
-      _mapController?.animateCamera(
+
+      _mapController!.animateCamera(
         CameraUpdate.newCameraPosition(
           CameraPosition(
             target: LatLng(currentPoint.latitude, currentPoint.longitude),
             zoom: 16.5,
             tilt: 65.0,
             bearing: bearing,
-          )
+          ),
         ),
-        duration: const Duration(milliseconds: 100),
+        duration: const Duration(milliseconds: 400),
       );
     }
   }
 
   void _togglePlay() {
+    if (!_isStyleLoaded) return; // Don't allow play before map is ready
+
     setState(() {
       _isPlaying = !_isPlaying;
       if (_isPlaying) {
+        _lastUpdatedIndex = -1;
         if (_animationController.isCompleted) {
           _animationController.reset();
         }
@@ -166,6 +205,7 @@ class _Flyover3DScreenState extends State<Flyover3DScreen> with SingleTickerProv
 
   @override
   void dispose() {
+    _animationController.removeListener(_onAnimationTick);
     _animationController.dispose();
     super.dispose();
   }
@@ -176,7 +216,10 @@ class _Flyover3DScreenState extends State<Flyover3DScreen> with SingleTickerProv
       backgroundColor: AppColors.background,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('3D Flyover', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: const Text(
+          '3D Flyover',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
         backgroundColor: Colors.black45,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -194,19 +237,44 @@ class _Flyover3DScreenState extends State<Flyover3DScreen> with SingleTickerProv
               zoom: 2,
             ),
           ),
-          
+
+          // Loading overlay while style/source not ready
+          if (!_isStyleLoaded)
+            Container(
+              color: Colors.black54,
+              child: const Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(color: Colors.white),
+                    SizedBox(height: 16),
+                    Text(
+                      'Loading 3D map...',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          // Play/Pause button
           Positioned(
             bottom: 40,
             left: 0,
             right: 0,
             child: Center(
               child: FloatingActionButton.extended(
-                onPressed: _togglePlay,
-                backgroundColor: AppColors.primary,
-                icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white),
+                onPressed: _isStyleLoaded ? _togglePlay : null,
+                backgroundColor:
+                    _isStyleLoaded ? AppColors.primary : Colors.grey,
+                icon: Icon(
+                  _isPlaying ? Icons.pause : Icons.play_arrow,
+                  color: Colors.white,
+                ),
                 label: Text(
                   _isPlaying ? 'Pause Flyover' : 'Start Flyover',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),
             ),

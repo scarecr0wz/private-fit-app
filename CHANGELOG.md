@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.7.1] - 2026-06-20
+
+### Fixed
+- **3D Flyover**: Fixed "Start Flyover" button doing nothing after being pressed.
+  - Added `_isStyleLoaded` guard — animation tick now waits for MapLibre style and GeoJSON source to fully initialize before running.
+  - Added index-based throttle (`_lastUpdatedIndex`) to prevent flooding MapLibre with `setGeoJsonSource` + `animateCamera` calls on every animation frame (~60fps).
+  - Increased camera animation duration from 100ms to 400ms to eliminate race conditions and jitter.
+  - "Start Flyover" button is now disabled (greyed out) until the 3D map is fully ready.
+  - Added loading overlay while the map and terrain style are loading.
+  - Fixed potential memory leak by calling `removeListener` in `dispose()`.
+
 ## [1.7.0] - 2026-06-19
 
 ### Added
