@@ -53,20 +53,30 @@ class _WeatherCardState extends State<WeatherCard> {
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
+        // Match the glass-dark gradient used by _ActivityCard & _MealList
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1A1A3E), Color(0xFF0D1B2A)],
+          colors: [
+            Color(0xB3292839),
+            Color(0xE61E1E2E),
+          ],
         ),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.08),
+          color: Colors.white.withValues(alpha: 0.15),
           width: 1,
         ),
         boxShadow: [
+          const BoxShadow(
+            color: Color(0x4D000000),
+            blurRadius: 32,
+            spreadRadius: 0,
+            offset: Offset(0, 8),
+          ),
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.08),
+            color: AppColors.primary.withValues(alpha: 0.06),
             blurRadius: 24,
-            offset: const Offset(0, 8),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -86,22 +96,24 @@ class _LoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.all(24),
+    return Padding(
+      padding: const EdgeInsets.all(24),
       child: Row(
         children: [
           SizedBox(
-            width: 20,
-            height: 20,
+            width: 18,
+            height: 18,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: Colors.white54,
+              color: AppColors.primary.withValues(alpha: 0.6),
             ),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Text(
             'Fetching weather...',
-            style: TextStyle(color: Colors.white54, fontSize: 14),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
           ),
         ],
       ),
@@ -123,17 +135,23 @@ class _ErrorState extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       child: Row(
         children: [
-          const Text('🌡️', style: TextStyle(fontSize: 28)),
+          const Text('🌡️', style: TextStyle(fontSize: 26)),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(color: Colors.white54, fontSize: 13),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                  ),
             ),
           ),
           IconButton(
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh, color: Colors.white38, size: 20),
+            icon: Icon(
+              Icons.refresh,
+              color: AppColors.primary.withValues(alpha: 0.5),
+              size: 20,
+            ),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
@@ -154,18 +172,20 @@ class _WeatherContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final suit = weather.suitability;
-    final (suitColor, suitBg) = switch (suit) {
+
+    // Suitability uses app palette colours instead of raw hex
+    final (Color suitColor, Color suitBg) = switch (suit) {
       ExerciseSuitability.great => (
-          const Color(0xFF00E676),
-          const Color(0x1500E676),
+          AppColors.secondary,                              // aquamarine
+          AppColors.secondary.withValues(alpha: 0.12),
         ),
       ExerciseSuitability.fair => (
-          const Color(0xFFFFB300),
-          const Color(0x15FFB300),
+          const Color(0xFFFFD166),                         // warm amber
+          const Color(0x18FFD166),
         ),
       ExerciseSuitability.poor => (
-          const Color(0xFFFF5252),
-          const Color(0x15FF5252),
+          AppColors.tertiary,                               // punch pink
+          AppColors.tertiary.withValues(alpha: 0.12),
         ),
     };
 
@@ -174,11 +194,11 @@ class _WeatherContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Top row: emoji + temp + refresh ────────────────────────
+          // ── Top row: emoji + temp + refresh ──────────────────────────
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(weather.weatherEmoji, style: const TextStyle(fontSize: 44)),
+              Text(weather.weatherEmoji, style: const TextStyle(fontSize: 42)),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -186,19 +206,18 @@ class _WeatherContent extends StatelessWidget {
                   children: [
                     Text(
                       '${weather.temperature.toStringAsFixed(1)}°C',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: -0.5,
-                      ),
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            color: AppColors.onSurface,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.5,
+                          ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       'Feels like ${weather.apparentTemp.toStringAsFixed(1)}°C  •  ${weather.weatherDescription}',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.55),
-                        fontSize: 12,
-                      ),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
+                          ),
                     ),
                   ],
                 ),
@@ -209,7 +228,7 @@ class _WeatherContent extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 4),
                   child: Icon(
                     Icons.refresh,
-                    color: Colors.white.withValues(alpha: 0.3),
+                    color: AppColors.primary.withValues(alpha: 0.4),
                     size: 18,
                   ),
                 ),
@@ -219,20 +238,26 @@ class _WeatherContent extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // ── Stats chips row ─────────────────────────────────────────
+          // ── Stats chips row ───────────────────────────────────────────
           Row(
             children: [
               _Chip(icon: '💧', label: '${weather.humidity.toInt()}%', sublabel: 'Humidity'),
               const SizedBox(width: 10),
-              _Chip(icon: '💨', label: '${weather.windSpeedKmh.toStringAsFixed(1)} km/h', sublabel: 'Wind'),
+              _Chip(
+                  icon: '💨',
+                  label: '${weather.windSpeedKmh.toStringAsFixed(1)} km/h',
+                  sublabel: 'Wind'),
               const SizedBox(width: 10),
-              _Chip(icon: '🌧️', label: '${weather.precipitation.toStringAsFixed(1)} mm', sublabel: 'Rain'),
+              _Chip(
+                  icon: '🌧️',
+                  label: '${weather.precipitation.toStringAsFixed(1)} mm',
+                  sublabel: 'Rain'),
             ],
           ),
 
           const SizedBox(height: 14),
 
-          // ── Suitability banner ──────────────────────────────────────
+          // ── Suitability banner ────────────────────────────────────────
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -243,16 +268,15 @@ class _WeatherContent extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Text(suit.emoji, style: const TextStyle(fontSize: 16)),
+                Text(suit.emoji, style: const TextStyle(fontSize: 15)),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     suit.label,
-                    style: TextStyle(
-                      color: suitColor,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: suitColor,
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                 ),
               ],
@@ -263,6 +287,8 @@ class _WeatherContent extends StatelessWidget {
     );
   }
 }
+
+// ─── Stat Chip ────────────────────────────────────────────────────────────────
 
 class _Chip extends StatelessWidget {
   final String icon;
@@ -277,9 +303,12 @@ class _Chip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
+          // Subtle surface-container tint – same as icon container in _ActivityCard
+          color: AppColors.primary.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.08),
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -291,11 +320,10 @@ class _Chip extends StatelessWidget {
                 Flexible(
                   child: Text(
                     label,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: AppColors.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -304,10 +332,9 @@ class _Chip extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               sublabel,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.4),
-                fontSize: 10,
-              ),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.onSurfaceVariant.withValues(alpha: 0.6),
+                  ),
             ),
           ],
         ),
