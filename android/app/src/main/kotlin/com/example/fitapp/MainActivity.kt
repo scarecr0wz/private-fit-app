@@ -1,4 +1,4 @@
-package com.example.fitapp
+package com.example.fitfad
 
 import io.flutter.embedding.android.FlutterActivity
 

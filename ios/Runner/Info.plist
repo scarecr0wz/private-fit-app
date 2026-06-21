@@ -7,7 +7,7 @@
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>
-		<string>Fitapp</string>
+		<string>Fitfad</string>
 		<key>CFBundleExecutable</key>
 		<string>$(EXECUTABLE_NAME)</string>
 		<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 		<key>CFBundleInfoDictionaryVersion</key>
 		<string>6.0</string>
 		<key>CFBundleName</key>
-		<string>fitapp</string>
+		<string>fitfad</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 		<key>CFBundleShortVersionString</key>
@@ -67,11 +67,11 @@
 			<string>UIInterfaceOrientationLandscapeRight</string>
 		</array>
 		<key>NSLocationWhenInUseUsageDescription</key>
-		<string>FitApp butuh lokasi untuk track rute olahraga kamu.</string>
+		<string>FitFad butuh lokasi untuk track rute olahraga kamu.</string>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-		<string>FitApp butuh lokasi di background untuk tracking rute yang akurat.</string>
+		<string>FitFad butuh lokasi di background untuk tracking rute yang akurat.</string>
 		<key>NSCameraUsageDescription</key>
-		<string>FitApp butuh akses kamera untuk scan barcode makanan.</string>
+		<string>FitFad butuh akses kamera untuk scan barcode makanan.</string>
 		<key>UIBackgroundModes</key>
 		<array>
 			<string>location</string>

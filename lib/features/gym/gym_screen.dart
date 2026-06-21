@@ -195,7 +195,7 @@ class _GymScreenState extends State<GymScreen> {
               ),
               const SizedBox(width: 10),
               Text(
-                'FitApp',
+                'FitFad',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w800,

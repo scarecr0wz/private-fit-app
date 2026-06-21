@@ -7,7 +7,7 @@ import 'package:path/path.dart' as p;
 DatabaseConnection connect() {
   return DatabaseConnection.delayed(Future(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'fitapp.sqlite'));
+    final file = File(p.join(dbFolder.path, 'fitfad.sqlite'));
     return DatabaseConnection(NativeDatabase.createInBackground(file));
   }));
 }

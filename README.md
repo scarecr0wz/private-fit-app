@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="assets/icon.jpg" alt="FitApp Logo" width="120" height="120" style="border-radius: 24px;">
+  <img src="assets/icon.jpg" alt="FitFad Logo" width="120" height="120" style="border-radius: 24px;">
 
-  # FitApp
+  # FitFad
 
   <p align="center">
     <strong>Fitness Tracker — Track your nutrition, workouts, and outdoor activities</strong>
@@ -19,7 +19,7 @@
   <br>
 </div>
 
-FitApp is a personal fitness tracker built with **Flutter** and an **offline-first architecture**. This project was born from my own passion for working out and the desire to have a platform fully tailored to how I train, eat, and track progress — built by me, for me.
+FitFad is a personal fitness tracker built with **Flutter** and an **offline-first architecture**. This project was born from my own passion for working out and the desire to have a platform fully tailored to how I train, eat, and track progress — built by me, for me.
 
 It helps you log your meals, scan barcodes, track outdoor runs and rides with GPS, record gym workouts with sets and reps, and visualize your stats — all stored locally on your device with no internet required.
 
@@ -141,8 +141,8 @@ lib/
 
 ```bash
 # Clone the repository
-git clone https://github.com/username/fitapp.git
-cd fitapp
+git clone https://github.com/username/fitfad.git
+cd fitfad
 
 # Install dependencies
 flutter pub get
@@ -168,7 +168,7 @@ flutter run -d windows
 ## 📁 Project Structure
 
 ```
-fitapp/
+fitfad/
 ├── .github/workflows/   # CI/CD — iOS build workflow
 ├── android/             # Android platform
 ├── assets/              # Logo & assets
@@ -210,7 +210,7 @@ fitapp/
 
 ## 🤝 Contributing
 
-Since this is a personal project, external contributions are not planned at this time. However, if you find a bug or have a suggestion, feel free to open an [issue](https://github.com/username/fitapp/issues).
+Since this is a personal project, external contributions are not planned at this time. However, if you find a bug or have a suggestion, feel free to open an [issue](https://github.com/username/fitfad/issues).
 
 ---
 
@@ -223,5 +223,5 @@ Distributed under the MIT License. See `LICENSE` for more information.
 <div align="center">
   <sub>Built with ❤️ using Flutter & Dart</sub>
   <br>
-  <sub>© 2026 FitApp</sub>
+  <sub>© 2026 FitFad</sub>
 </div>

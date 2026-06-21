@@ -155,7 +155,7 @@ class DashboardScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        'FitApp',
+                        'FitFad',
                         style: Theme.of(context)
                             .textTheme
                             .headlineMedium

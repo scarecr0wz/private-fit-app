@@ -310,7 +310,7 @@ class _FoodScreenState extends State<FoodScreen> {
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  'FitApp',
+                  'FitFad',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w800,

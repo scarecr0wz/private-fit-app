@@ -159,7 +159,7 @@ class ActivityService extends ChangeNotifier {
         foregroundNotificationConfig: const ForegroundNotificationConfig(
           notificationText:
               "Aplikasi sedang melacak aktivitas Anda di latar belakang.",
-          notificationTitle: "FitApp Tracking",
+          notificationTitle: "FitFad Tracking",
           enableWakeLock: true,
         ),
       );

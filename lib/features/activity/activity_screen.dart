@@ -122,7 +122,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
               TileLayer(
                 urlTemplate: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
                 subdomains: const ['a', 'b', 'c', 'd'],
-                userAgentPackageName: 'com.example.fitapp',
+                userAgentPackageName: 'com.example.fitfad',
                 // Offline fallback: jika tile gagal dimuat, tidak crash
                 errorTileCallback: (tile, error, stackTrace) {},
               ),

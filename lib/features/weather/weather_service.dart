@@ -262,7 +262,7 @@ class WeatherService {
           'lat': pos.latitude,
           'lon': pos.longitude,
         },
-        options: Options(headers: {'User-Agent': 'FitApp/1.0'}),
+        options: Options(headers: {'User-Agent': 'FitFad/1.0'}),
       ).catchError((_) => Response(requestOptions: RequestOptions(path: ''), data: {}));
 
       final results = await Future.wait([weatherFuture, cityFuture]);

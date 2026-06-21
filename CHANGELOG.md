@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.9.0] - 2026-06-21
+
+### Changed
+- **Rebranding**: Completely rebranded the application from "FitApp" to "FitFad" globally across the entire system.
+  - Updated documentation (`README.md`, `CHANGELOG.md`).
+  - Updated Dart/Flutter frontend codebase, package names, and imports.
+  - Updated native build configurations (Android, iOS, Web, Windows).
+  - Updated local database schema names and SQLite identifiers.
+
 ## [1.8.2] - 2026-06-21
 
 # Fixed
@@ -205,7 +214,7 @@
 - **Stats Screen**: Cleaned up leftover dummy code (`_DummyHistoryItem`, `_buildHistoryCards`).
 - **Stats Screen**: Added `WorkoutLogs` to history list to correctly display Gym sessions alongside Cardio.
 - **Database**: Added `caloriesBurned` column to `WorkoutLogs` for accurate dashboard calculations.
-- **Tests**: Updated `widget_test.dart` to use `FitApp` instead of `MyApp`.
+- **Tests**: Updated `widget_test.dart` to use `FitFad` instead of `MyApp`.
 
 ### Changed
 - Added `drift`, `dio`, `mobile_scanner`, `path`, `path_provider` dependencies
@@ -245,5 +254,5 @@
 - GoRouter-based navigation (Today, Food, Activity, Gym)
 
 ### Changed
-- Restructured project layout: moved `fitapp/` contents to repository root
+- Restructured project layout: moved `fitfad/` contents to repository root
 - Removed `prompts/` folder from repository

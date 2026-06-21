@@ -16,11 +16,11 @@ void main() async {
     ),
   );
 
-  runApp(const ProviderScope(child: FitApp()));
+  runApp(const ProviderScope(child: FitFad()));
 }
 
-class FitApp extends StatelessWidget {
-  const FitApp({super.key});
+class FitFad extends StatelessWidget {
+  const FitFad({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +30,7 @@ class FitApp extends StatelessWidget {
     );
 
     return MaterialApp.router(
-      title: 'FitApp',
+      title: 'FitFad',
       debugShowCheckedModeBanner: false,
       theme: themeWithInter,
       routerConfig: router,
