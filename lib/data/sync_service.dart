@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:drift/drift.dart' as drift;
 import 'api_client.dart';
 import 'database.dart';
 
@@ -112,9 +113,9 @@ class SyncService {
   /// 🔄 Restore dari VPS (Hanya jika SQLite lokal kosong)
   Future<void> restoreFromVpsIfEmpty() async {
     try {
-      final foodCount = await db.foodLogs.count().getSingle();
-      final activityCount = await db.activityLogs.count().getSingle();
-      final workoutCount = await db.workoutLogs.count().getSingle();
+      final foodCount = (await db.select(db.foodLogs).get()).length;
+      final activityCount = (await db.select(db.activityLogs).get()).length;
+      final workoutCount = (await db.select(db.workoutLogs).get()).length;
 
       if (foodCount == 0 && activityCount == 0 && workoutCount == 0) {
         print('⏳ [Sync] SQLite kosong. Mendownload riwayat dari VPS...');

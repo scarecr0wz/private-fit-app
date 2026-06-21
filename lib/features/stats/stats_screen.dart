@@ -204,35 +204,39 @@ class _StatsScreenState extends State<StatsScreen> {
                                               color: AppColors.errorContainer,
                                               borderRadius: BorderRadius.circular(24),
                                             ),
-                                            child: const Icon(Icons.delete_outline, color: AppColors.onErrorContainer),
+                                            child: const Icon(Icons.delete_outline, color: Colors.white),
                                           ),
                                           confirmDismiss: (_) async {
                                             final confirm = await showDialog<bool>(
                                               context: context,
-                                              builder: (ctx) => AlertDialog(
+                                              builder: (c) => AlertDialog(
                                                 backgroundColor: AppColors.surfaceContainerHigh,
                                                 title: const Text('Delete Activity?'),
-                                                content: Text('Are you sure you want to delete this $label?'),
+                                                content: const Text('This will permanently delete this activity/workout from your history.'),
                                                 actions: [
-                                                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                                                  TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
                                                   TextButton(
-                                                    onPressed: () => Navigator.pop(ctx, true),
+                                                    onPressed: () => Navigator.pop(c, true),
                                                     child: const Text('Delete', style: TextStyle(color: AppColors.error)),
                                                   ),
                                                 ],
                                               ),
                                             );
                                             if (confirm == true) {
-                                              if (type == 'gym') {
-                                                await db.workoutLogs.deleteWhere((t) => t.id.equals(a['raw'].id));
-                                                try {
-                                                  await syncServiceInstance.deleteWorkout(a['raw'].id);
-                                                } catch (_) {}
-                                              } else {
-                                                await db.activityLogs.deleteWhere((t) => t.id.equals(a['raw'].id));
-                                                try {
-                                                  await syncServiceInstance.deleteActivity(a['raw'].id);
-                                                } catch (_) {}
+                                              try {
+                                                if (type == 'gym') {
+                                                  await (db.delete(db.workoutLogs)..where((t) => t.id.equals(a['raw'].id))).go();
+                                                  try {
+                                                    await syncServiceInstance.deleteWorkout(a['raw'].id);
+                                                  } catch (_) {}
+                                                } else {
+                                                  await (db.delete(db.activityLogs)..where((t) => t.id.equals(a['raw'].id))).go();
+                                                  try {
+                                                    await syncServiceInstance.deleteActivity(a['raw'].id);
+                                                  } catch (_) {}
+                                                }
+                                              } catch (e) {
+                                                print('Error deleting activity: $e');
                                               }
                                             }
                                             return confirm;

@@ -815,7 +815,7 @@ class _FoodScreenState extends State<FoodScreen> {
                   color: AppColors.errorContainer,
                   borderRadius: BorderRadius.circular(24),
                 ),
-                child: const Icon(Icons.delete_outline, color: AppColors.onErrorContainer),
+                child: const Icon(Icons.delete_outline, color: Colors.white),
               ),
               confirmDismiss: (_) async {
                 final confirm = await showDialog<bool>(
@@ -834,7 +834,7 @@ class _FoodScreenState extends State<FoodScreen> {
                   ),
                 );
                 if (confirm == true) {
-                  await db.foodLogs.deleteWhere((t) => t.id.equals(log.id));
+                  await (db.delete(db.foodLogs)..where((t) => t.id.equals(log.id))).go();
                   try {
                     await syncServiceInstance.deleteFood(log.id);
                   } catch (_) {}
