@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.1] - 2026-06-21
+
+### Added
+- **UI/UX**: Added "Swipe to Delete" functionality on Food History and Activity History cards using `Dismissible`.
+- **Sync**: Integrated `deleteFood`, `deleteActivity`, and `deleteWorkout` into `SyncService` so that local deletions are optimistically sent to the VPS API.
+- **UI/UX**: Displayed precise Date and Time (`dd MMM yyyy, HH:mm`) under each Food and Activity history item.
+
 ## [1.11.0] - 2026-06-21
 
 ### Added
