@@ -4,6 +4,10 @@
 
 ### Added
 - **Activity**: Added an Activity Summary pop-up dialog that displays duration, distance, calories, average pace, and elevation gain when the user stops an activity.
+- **Activity Detail**: Added a Pace Profile Chart below the Elevation Profile to visualize pacing dynamics.
+
+### Changed
+- **Activity Detail**: Refactored the Weather section into a compact, space-saving text format below the main statistics.
 
 ## [1.10.0] - 2026-06-21
 

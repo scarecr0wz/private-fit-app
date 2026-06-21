@@ -39,6 +39,7 @@ class ActivityDetailScreen extends StatelessWidget {
     
     // For Elevation Chart
     List<FlSpot> elevationSpots = [];
+    List<FlSpot> paceSpots = [];
     double cumulativeDist = 0.0;
     double minAlt = double.infinity;
     double maxAlt = double.negativeInfinity;
@@ -51,10 +52,14 @@ class ActivityDetailScreen extends StatelessWidget {
           final p = decoded[i];
           final point = LatLng(p['lat'], p['lng']);
           routePoints.add(point);
-          paceValues.add((p['pace'] ?? -1.0).toDouble());
+          final currentPace = (p['pace'] ?? -1.0).toDouble();
+          paceValues.add(currentPace);
 
           if (i > 0) {
             cumulativeDist += _distBetween(routePoints[i - 1], point);
+          }
+          if (currentPace > 0) {
+            paceSpots.add(FlSpot(cumulativeDist, currentPace));
           }
 
           if (p.containsKey('alt')) {
@@ -291,6 +296,27 @@ class ActivityDetailScreen extends StatelessWidget {
                     ],
                   ),
 
+                  // Simple Weather Info
+                  if (activity.weatherCode != null) ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          WmoWeather.emoji(activity.weatherCode!),
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${activity.weatherTemp?.toInt() ?? '-'}°C • ${activity.weatherWindKmh?.toStringAsFixed(1) ?? '-'} km/h wind • ${activity.weatherHumidity?.toInt() ?? '-'}% hum',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Colors.white70,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ],
+
                   // Pace History List
                   if (paceHistory.isNotEmpty) ...[
                     const SizedBox(height: 28),
@@ -391,10 +417,82 @@ class ActivityDetailScreen extends StatelessWidget {
                     ),
                   ],
 
-                  // ── Weather at activity time ──────────────────────────
-                  if (activity.weatherCode != null) ...[
+                  // Pace Profile Chart
+                  if (paceSpots.isNotEmpty) ...[
                     const SizedBox(height: 32),
-                    _ActivityWeatherSection(activity: activity),
+                    Row(
+                      children: [
+                        const Icon(Icons.speed,
+                            color: AppColors.secondary, size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Pace Profile',
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: AppColors.onSurface,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 120,
+                      child: LineChart(
+                        LineChartData(
+                          minX: 0,
+                          maxX: cumulativeDist,
+                          gridData: const FlGridData(show: false),
+                          titlesData: FlTitlesData(
+                            show: true,
+                            topTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: false)),
+                            rightTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: false)),
+                            bottomTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: false)),
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 40,
+                                getTitlesWidget: (val, meta) {
+                                  final minutes = val.floor();
+                                  final seconds = ((val - minutes) * 60).floor();
+                                  return Text(
+                                    "$minutes'${seconds.toString().padLeft(2, '0')}\"",
+                                    style: const TextStyle(
+                                        color: Colors.white54, fontSize: 9),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                          borderData: FlBorderData(show: false),
+                          lineBarsData: [
+                            LineChartBarData(
+                              spots: paceSpots,
+                              isCurved: true,
+                              curveSmoothness: 0.15,
+                              color: AppColors.secondary,
+                              barWidth: 2,
+                              isStrokeCapRound: true,
+                              dotData: const FlDotData(show: false),
+                              belowBarData: BarAreaData(
+                                show: true,
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppColors.secondary.withValues(alpha: 0.5),
+                                    AppColors.secondary.withValues(alpha: 0.0),
+                                  ],
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ],
               ),
@@ -840,134 +938,3 @@ class _StatItem extends StatelessWidget {
   }
 }
 
-// ─── Weather Section in Activity Detail ───────────────────────────────────
-
-class _ActivityWeatherSection extends StatelessWidget {
-  final ActivityLog activity;
-  const _ActivityWeatherSection({required this.activity});
-
-  @override
-  Widget build(BuildContext context) {
-    final code = activity.weatherCode!;
-    final temp = activity.weatherTemp;
-    final humidity = activity.weatherHumidity;
-    final wind = activity.weatherWindKmh;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Icon(Icons.wb_sunny_outlined,
-                color: AppColors.secondary, size: 16),
-            const SizedBox(width: 6),
-            Text(
-              'Weather During Activity',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppColors.onSurface,
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.06),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    WmoWeather.emoji(code),
-                    style: const TextStyle(fontSize: 36),
-                  ),
-                  const SizedBox(width: 14),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        temp != null
-                            ? '${temp.toStringAsFixed(1)}°C'
-                            : '—',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        WmoWeather.description(code),
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.55),
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  if (humidity != null)
-                    _WeatherChip(icon: '💧', label: '${humidity.toInt()}%', sub: 'Humidity'),
-                  if (humidity != null) const SizedBox(width: 8),
-                  if (wind != null)
-                    _WeatherChip(icon: '💨', label: '${wind.toStringAsFixed(1)} km/h', sub: 'Wind'),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _WeatherChip extends StatelessWidget {
-  final String icon;
-  final String label;
-  final String sub;
-  const _WeatherChip({required this.icon, required this.label, required this.sub});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(icon, style: const TextStyle(fontSize: 14)),
-          const SizedBox(width: 6),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600)),
-              Text(sub,
-                  style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4), fontSize: 10)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
