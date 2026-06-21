@@ -3,6 +3,7 @@
 ## [1.10.1] - 2026-06-21
 
 ### Added
+- **Stats**: Added a beautiful "Outdoor Summary" section above the Burned Calories chart to display the total number of outdoor activities, accumulated distance, total calories burnt, and average pace.
 - **Activity 3D Flyover**: Added an automatic Screen Recording feature for the 3D route replay. Users can now tap the "Record Video" icon to automatically capture an MP4 video of their 3D map flyover complete with a beautiful statistics overlay and FitFad branding, and instantly share it to their social media stories.
 - **Activity Detail**: Introduced a "Share to Story" feature. Users can now tap the share icon, pick a photo, and generate a beautiful image overlay containing their route polyline and key statistics to share on social media.
 - **Activity**: Added an Activity Summary pop-up dialog that displays duration, distance, calories, average pace, and elevation gain when the user stops an activity.

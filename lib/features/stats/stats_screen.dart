@@ -130,6 +130,10 @@ class _StatsScreenState extends State<StatsScreen> {
                                   const SizedBox(height: 20),
                                   _buildToggle(),
                                   const SizedBox(height: 24),
+                                  if (activities.isNotEmpty) ...[
+                                    _buildOutdoorSummary(activities),
+                                    const SizedBox(height: 24),
+                                  ],
                                   _buildCalorieChartCard(activities, workouts),
                                   const SizedBox(height: 24),
                                   Text(
@@ -302,6 +306,85 @@ class _StatsScreenState extends State<StatsScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildOutdoorSummary(List<ActivityLog> activities) {
+    if (activities.isEmpty) return const SizedBox.shrink();
+
+    int totalActivities = activities.length;
+    double totalDistanceKm = activities.fold(0.0, (sum, a) => sum + a.distanceMeters) / 1000;
+    double totalCalories = activities.fold(0.0, (sum, a) => sum + a.caloriesBurned);
+    int totalDurationSecs = activities.fold(0, (sum, a) => sum + a.durationSeconds);
+
+    String avgPaceStr = "-'--\"";
+    if (totalDistanceKm > 0) {
+      double paceMin = (totalDurationSecs / 60) / totalDistanceKm;
+      int m = paceMin.floor();
+      int s = ((paceMin - m) * 60).round();
+      avgPaceStr = "$m'${s.toString().padLeft(2, '0')}\"";
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Outdoor Summary',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: AppColors.onSurface,
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(child: _buildSummaryCard(Icons.directions_run_rounded, 'Activities', '$totalActivities')),
+            const SizedBox(width: 12),
+            Expanded(child: _buildSummaryCard(Icons.map_rounded, 'Distance', '${totalDistanceKm.toStringAsFixed(1)} km')),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: _buildSummaryCard(Icons.local_fire_department_rounded, 'Calories', '${totalCalories.toInt()} kcal', iconColor: const Color(0xFFFF7043))),
+            const SizedBox(width: 12),
+            Expanded(child: _buildSummaryCard(Icons.speed_rounded, 'Avg Pace', avgPaceStr)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryCard(IconData icon, String label, String value, {Color iconColor = AppColors.primary}) {
+    return _GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: iconColor, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppColors.onSurfaceVariant,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
       ),
     );
   }
