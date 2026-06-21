@@ -21,6 +21,11 @@ class _FoodScreenState extends State<FoodScreen> {
   bool _hasSearched = false;
   bool _isLoading = false;
 
+  String _selectedFilter = 'Today';
+  DateTime? _customStartDate;
+  DateTime? _customEndDate;
+  final List<String> _filters = ['Today', 'Yesterday', 'This Week', 'This Month', 'All Time', 'Custom'];
+
   Timer? _debounce;
 
   @override
@@ -257,6 +262,7 @@ class _FoodScreenState extends State<FoodScreen> {
             children: [
               _buildAppBar(context),
               _buildSearchBar(context),
+              if (!_hasSearched) _buildFilterDropdown(context),
               Expanded(
                 child: _isLoading
                     ? const Center(
@@ -399,14 +405,223 @@ class _FoodScreenState extends State<FoodScreen> {
     );
   }
 
+  Widget _buildFilterDropdown(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          _buildDateSelector(),
+          _buildQuickChip('This Week'),
+          _buildQuickChip('This Month'),
+          _buildQuickChip('All Time'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateSelector() {
+    bool isDateSelected = ['Today', 'Yesterday', 'Custom'].contains(_selectedFilter);
+    String displayLabel = 'Select Date';
+    if (_selectedFilter == 'Today' || _selectedFilter == 'Yesterday') {
+      displayLabel = _selectedFilter;
+    } else if (_selectedFilter == 'Custom' && _customStartDate != null && _customEndDate != null) {
+      displayLabel = '${_customStartDate!.day}/${_customStartDate!.month} - ${_customEndDate!.day}/${_customEndDate!.month}';
+    } else if (isDateSelected) {
+      displayLabel = _selectedFilter;
+    }
+
+    return GestureDetector(
+      onTap: () => _showDateSheet(context),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isDateSelected ? AppColors.primary : AppColors.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDateSelected ? AppColors.primary : Colors.white.withValues(alpha: 0.1),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.calendar_month_outlined, size: 16, color: isDateSelected ? AppColors.onPrimary : AppColors.secondary),
+            const SizedBox(width: 6),
+            Text(
+              displayLabel,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: isDateSelected ? AppColors.onPrimary : AppColors.onSurface,
+                    fontWeight: isDateSelected ? FontWeight.w700 : FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(width: 4),
+            Icon(Icons.keyboard_arrow_down, size: 16, color: isDateSelected ? AppColors.onPrimary : AppColors.onSurfaceVariant),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickChip(String filter) {
+    final isSelected = _selectedFilter == filter;
+    return ActionChip(
+      label: Text(filter),
+      labelStyle: TextStyle(
+        color: isSelected ? AppColors.onPrimary : AppColors.onSurfaceVariant,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        fontSize: 12,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+      backgroundColor: isSelected ? AppColors.primary : AppColors.surfaceContainerLow,
+      side: BorderSide(
+        color: isSelected ? AppColors.primary : Colors.white.withValues(alpha: 0.1),
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      onPressed: () {
+        setState(() {
+          _selectedFilter = filter;
+        });
+      },
+    );
+  }
+
+  void _showDateSheet(BuildContext context) {
+    final options = ['Today', 'Yesterday', 'Custom'];
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) {
+        return Container(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerLow,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.10), width: 1),
+          ),
+          padding: const EdgeInsets.only(bottom: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 16),
+                  width: 32,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.outlineVariant,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Select Date',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close, color: AppColors.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...options.map((filter) {
+                final isSelected = _selectedFilter == filter;
+                return ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                  leading: Icon(
+                    filter == 'Today' ? Icons.today :
+                    filter == 'Yesterday' ? Icons.update :
+                    Icons.edit_calendar,
+                    color: isSelected ? AppColors.primary : AppColors.onSurfaceVariant,
+                  ),
+                  title: Text(
+                    filter,
+                    style: TextStyle(
+                      color: isSelected ? AppColors.primary : AppColors.onSurface,
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
+                    ),
+                  ),
+                  trailing: isSelected ? const Icon(Icons.check, color: AppColors.primary) : null,
+                  onTap: () async {
+                    Navigator.pop(context); // Close the sheet
+                    if (filter == 'Custom') {
+                      final dateRange = await showDateRangePicker(
+                        context: context,
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime.now(),
+                        builder: (context, child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: const ColorScheme.dark(
+                                primary: AppColors.primary,
+                                onPrimary: AppColors.onPrimary,
+                                surface: AppColors.surfaceContainerHigh,
+                                onSurface: AppColors.onSurface,
+                              ),
+                            ),
+                            child: child!,
+                          );
+                        },
+                      );
+                      if (dateRange != null) {
+                        setState(() {
+                          _customStartDate = dateRange.start;
+                          _customEndDate = dateRange.end;
+                          _selectedFilter = filter;
+                        });
+                      }
+                    } else {
+                      setState(() {
+                        _selectedFilter = filter;
+                      });
+                    }
+                  },
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildTodayHistory(BuildContext context) {
     final now = DateTime.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
-    final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
+    DateTime start;
+    DateTime end = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
+    if (_selectedFilter == 'Today') {
+      start = DateTime(now.year, now.month, now.day);
+    } else if (_selectedFilter == 'Yesterday') {
+      start = DateTime(now.year, now.month, now.day - 1);
+      end = DateTime(now.year, now.month, now.day - 1, 23, 59, 59);
+    } else if (_selectedFilter == 'This Week') {
+      start = DateTime(now.year, now.month, now.day - now.weekday + 1);
+    } else if (_selectedFilter == 'This Month') {
+      start = DateTime(now.year, now.month, 1);
+    } else if (_selectedFilter == 'All Time') {
+      start = DateTime(2000);
+    } else if (_selectedFilter == 'Custom') {
+      start = _customStartDate ?? DateTime(now.year, now.month, now.day);
+      end = _customEndDate != null
+          ? DateTime(_customEndDate!.year, _customEndDate!.month, _customEndDate!.day, 23, 59, 59)
+          : DateTime(now.year, now.month, now.day, 23, 59, 59);
+    } else {
+      start = DateTime(now.year, now.month, now.day);
+    }
 
     return StreamBuilder<List<FoodLog>>(
       stream: (db.select(db.foodLogs)
-            ..where((t) => t.date.isBetweenValues(startOfDay, endOfDay))
+            ..where((t) => t.date.isBetweenValues(start, end))
             ..orderBy([(t) => drift.OrderingTerm(expression: t.date, mode: drift.OrderingMode.desc)]))
           .watch(),
       builder: (context, snapshot) {
@@ -428,12 +643,12 @@ class _FoodScreenState extends State<FoodScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Todays Tip',
+                              _selectedFilter == 'Today' ? 'Todays Tip' : 'No Data',
                               style: Theme.of(context).textTheme.labelMedium?.copyWith(color: AppColors.secondary),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Record what you eat today!',
+                              _selectedFilter == 'Today' ? 'Record what you eat today!' : 'No food logs found for $_selectedFilter.',
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.onSurface, height: 1.5),
                             ),
                           ],
@@ -485,6 +700,7 @@ class _FoodScreenState extends State<FoodScreen> {
             if (i == 0) {
               // Pie chart card
               return _NutritionPieChart(
+                title: _selectedFilter == 'Today' ? 'Nutrition Today' : 'Nutrition ($_selectedFilter)',
                 totalCalories: totalCalories,
                 totalProtein: totalProtein,
                 totalCarbs: totalCarbs,
@@ -494,7 +710,10 @@ class _FoodScreenState extends State<FoodScreen> {
             if (i == 1) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 4.0, left: 4),
-                child: Text('What You Ate Today', style: Theme.of(context).textTheme.titleMedium),
+                child: Text(
+                  _selectedFilter == 'Today' ? 'What You Ate Today' : 'What You Ate ($_selectedFilter)', 
+                  style: Theme.of(context).textTheme.titleMedium
+                ),
               );
             }
             final log = logs[i - 2];
@@ -608,12 +827,15 @@ class _GlassCard extends StatelessWidget {
 // ── Nutrition Pie Chart (3D Glow Arc Style) ───────────────────────────────────
 
 class _NutritionPieChart extends StatefulWidget {
+  final String title;
   final double totalCalories;
   final double totalProtein;
   final double totalCarbs;
   final double totalFat;
 
   const _NutritionPieChart({
+    super.key,
+    this.title = 'Nutrition Today',
     required this.totalCalories,
     required this.totalProtein,
     required this.totalCarbs,
@@ -709,7 +931,7 @@ class _NutritionPieChartState extends State<_NutritionPieChart>
               ),
               const SizedBox(width: 10),
               Text(
-                'Nutrition Today',
+                widget.title,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: AppColors.onSurface,
                   fontWeight: FontWeight.w700,
