@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.8.2] - 2026-06-21
+
+# Fixed
+- **Dashboard UI**: Fixed "Weather Section" information padding unbalanced, now balanced on the header.
+
 ## [1.8.1] - 2026-06-21
 
 ### Added
