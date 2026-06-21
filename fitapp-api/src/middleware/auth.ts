@@ -12,7 +12,7 @@ export const authMiddleware = createMiddleware(async (c, next) => {
 
   try {
     const token = header.slice(7)
-    const payload = await verify(token, JWT_SECRET)
+    const payload = await verify(token, JWT_SECRET, 'HS256')
     c.set('userId', payload.sub as string)
     await next()
   } catch (err) {

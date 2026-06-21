@@ -91,3 +91,4 @@ activityRoutes.delete('/:id', async (c) => {
   await prisma.activityLog.delete({ where: { id } })
   return c.json({ success: true })
 })
+

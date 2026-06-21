@@ -20,7 +20,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: GANTI_PASSWORD_INI
+      POSTGRES_PASSWORD: Nasigoreng123@
       POSTGRES_DB: fitapp
     volumes:
       - fitapp_pgdata:/var/lib/postgresql/data

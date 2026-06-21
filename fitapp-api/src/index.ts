@@ -18,11 +18,10 @@ app.use('*', cors())
 app.use('*', async (c, next) => {
   if (c.req.method !== 'GET' && c.req.method !== 'OPTIONS') {
     try {
-      // Clone request agar tidak bentrok dengan pembacaan body selanjutnya
       const body = await c.req.raw.clone().json()
       console.log(`[REALTIME DEBUG] Payload ${c.req.method} ${c.req.path}:`, JSON.stringify(body, null, 2))
     } catch (e) {
-      // Abaikan jika body bukan JSON
+      // Abaikan jika bukan JSON
     }
   }
   await next()
