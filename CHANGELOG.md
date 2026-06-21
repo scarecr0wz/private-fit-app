@@ -1,8 +1,17 @@
 # Changelog
 
+## [1.9.3] - 2026-06-21
+
+### Added
+- **Food Screen**: Introduced a new minimalist horizontal "Calorie Calendar" timeline. Displays the entire current month's dates with interactive calorie rings colored based on progress towards a 2000 kcal daily goal, directly fed from SQLite food logs.
+
+### Fixed
+- **Food Screen**: Re-organized filter UI; replaced horizontally scrolling chips with a clean drop-down action sheet and quick-chips.
+- **GitHub Actions**: Fixed YAML syntax error in `.github/workflows/build-ios.yml` caused by an accidental trailing colon.
+
 ## [1.9.2] - 2026-06-21
 
-## Added
+### Added
 - **Food**: Added filters on Food page. (Today (customizable-range), This Week, This Month and All Time)
 
 ## [1.9.1] - 2026-06-21

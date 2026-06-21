@@ -262,6 +262,7 @@ class _FoodScreenState extends State<FoodScreen> {
             children: [
               _buildAppBar(context),
               _buildSearchBar(context),
+              if (!_hasSearched) _buildCalendarView(context),
               if (!_hasSearched) _buildFilterDropdown(context),
               Expanded(
                 child: _isLoading
@@ -588,6 +589,114 @@ class _FoodScreenState extends State<FoodScreen> {
                 );
               }),
             ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCalendarView(BuildContext context) {
+    final now = DateTime.now();
+    final firstDayOfMonth = DateTime(now.year, now.month, 1);
+    final lastDayOfMonth = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
+    final daysInMonth = lastDayOfMonth.day;
+    
+    final screenWidth = MediaQuery.of(context).size.width;
+    final targetOffset = math.max(0.0, (now.day - 1) * 60.0 - (screenWidth / 2) + 30.0);
+    final ScrollController scrollController = ScrollController(initialScrollOffset: targetOffset);
+
+    return StreamBuilder<List<FoodLog>>(
+      stream: (db.select(db.foodLogs)
+            ..where((t) => t.date.isBetweenValues(firstDayOfMonth, lastDayOfMonth)))
+          .watch(),
+      builder: (context, snapshot) {
+        final logs = snapshot.data ?? [];
+        final Map<int, double> dailyCalories = {};
+        for (final log in logs) {
+          final day = log.date.day;
+          dailyCalories[day] = (dailyCalories[day] ?? 0) + log.calories;
+        }
+
+        const double calorieGoal = 2000.0; // Assumed daily target
+
+        return Container(
+          height: 90,
+          margin: const EdgeInsets.only(bottom: 16),
+          child: ListView.builder(
+            controller: scrollController,
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: daysInMonth,
+            itemBuilder: (context, index) {
+              final day = index + 1;
+              final date = DateTime(now.year, now.month, day);
+              final isToday = day == now.day;
+              final isFuture = day > now.day;
+
+              final cals = dailyCalories[day] ?? 0.0;
+              double progress = cals / calorieGoal;
+              if (progress > 1.0) progress = 1.0;
+
+              Color ringColor = AppColors.secondary;
+              if (progress == 0) {
+                ringColor = Colors.transparent;
+              } else if (progress < 0.5) {
+                ringColor = AppColors.error;
+              } else if (progress < 0.8) {
+                ringColor = Colors.orange;
+              }
+
+              final weekDays = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+              final dayName = weekDays[date.weekday - 1];
+
+              return Container(
+                width: 48,
+                margin: const EdgeInsets.only(right: 12),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      dayName,
+                      style: TextStyle(
+                        color: isToday ? AppColors.secondary : AppColors.onSurfaceVariant,
+                        fontSize: 10,
+                        fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: 38,
+                      height: 38,
+                      child: CustomPaint(
+                        painter: _MiniRingPainter(
+                          progress: progress,
+                          color: ringColor,
+                        ),
+                        child: Center(
+                          child: Text(
+                            '$day',
+                            style: TextStyle(
+                              color: isToday ? AppColors.secondary : (isFuture ? AppColors.onSurfaceVariant.withOpacity(0.3) : AppColors.onSurface),
+                              fontWeight: isToday ? FontWeight.w800 : FontWeight.w500,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      width: 4,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle, 
+                        color: isToday ? AppColors.secondary : Colors.transparent
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         );
       },
@@ -1865,4 +1974,42 @@ class _ScannerSheetState extends State<_ScannerSheet> {
       ),
     );
   }
+}
+
+class _MiniRingPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+
+  _MiniRingPainter({required this.progress, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 2;
+    const strokeWidth = 3.0;
+
+    final bgPaint = Paint()
+      ..color = Colors.white.withOpacity(0.1)
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawCircle(center, radius, bgPaint);
+
+    final arcPaint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2,
+      2 * math.pi * progress,
+      false,
+      arcPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_MiniRingPainter old) => old.progress != progress || old.color != color;
 }
