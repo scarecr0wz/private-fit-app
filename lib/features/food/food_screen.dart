@@ -75,13 +75,21 @@ class _FoodScreenState extends State<FoodScreen> {
       if (e.type == DioExceptionType.connectionError) {
         return 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
       }
+      if (e.type == DioExceptionType.cancel) {
+        return ''; // Jangan tampilkan error jika request dibatalkan sengaja
+      }
     } else if (e is Exception) {
       return e.toString().replaceAll('Exception: ', '');
     }
     return 'Terjadi kesalahan. Silakan coba lagi.';
   }
 
+  CancelToken? _cancelToken;
+
   Future<void> _fetchOpenFoodFacts(String query) async {
+    _cancelToken?.cancel();
+    _cancelToken = CancelToken();
+
     setState(() {
       _isLoading = true;
       _hasSearched = true;
@@ -92,6 +100,7 @@ class _FoodScreenState extends State<FoodScreen> {
       final dio = _createDio();
       final response = await dio.get(
         'https://world.openfoodfacts.org/cgi/search.pl',
+        cancelToken: _cancelToken,
         queryParameters: {
           'search_terms': query,
           'search_simple': 1,
@@ -219,7 +228,7 @@ class _FoodScreenState extends State<FoodScreen> {
   }
 
   void _showError(String message) {
-    if (!mounted) return;
+    if (!mounted || message.isEmpty) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
