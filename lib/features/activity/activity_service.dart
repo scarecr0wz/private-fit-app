@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:drift/drift.dart' show Value;
+import 'dart:math' show cos, sqrt, asin;
+import '../../data/database.dart';
+import '../../data/sync_service.dart';
+import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-import '../../data/database.dart';
 import '../weather/weather_service.dart';
 
 enum ActivityState { idle, countdown, running, paused }
@@ -306,20 +308,36 @@ class ActivityService extends ChangeNotifier {
           },
         ),
       );
-      await db.into(db.activityLogs).insert(
-            ActivityLogsCompanion.insert(
-              type: activityType.dbKey,
-              date: DateTime.now(),
-              durationSeconds: duration.inSeconds,
-              distanceMeters: distanceKm * 1000,
-              caloriesBurned: calories.toDouble(),
-              routePoints: routeJson,
-              weatherTemp: Value(_weatherSnapshot?.temperature),
-              weatherHumidity: Value(_weatherSnapshot?.humidity),
-              weatherWindKmh: Value(_weatherSnapshot?.windSpeedKmh),
-              weatherCode: Value(_weatherSnapshot?.weatherCode),
-            ),
-          );
+      final now = DateTime.now();
+      final insertData = ActivityLogsCompanion.insert(
+        type: activityType.dbKey,
+        date: now,
+        durationSeconds: duration.inSeconds,
+        distanceMeters: distanceKm * 1000,
+        caloriesBurned: calories.toDouble(),
+        routePoints: routeJson,
+        weatherTemp: Value(_weatherSnapshot?.temperature),
+        weatherHumidity: Value(_weatherSnapshot?.humidity),
+        weatherWindKmh: Value(_weatherSnapshot?.windSpeedKmh),
+        weatherCode: Value(_weatherSnapshot?.weatherCode),
+      );
+      final insertedId = await db.into(db.activityLogs).insert(insertData);
+      
+      // Sync ke VPS Backend
+      final activityLogData = ActivityLog(
+        id: insertedId,
+        date: now,
+        type: activityType.dbKey,
+        durationSeconds: duration.inSeconds,
+        distanceMeters: distanceKm * 1000,
+        caloriesBurned: calories.toDouble(),
+        routePoints: routeJson,
+        weatherTemp: _weatherSnapshot?.temperature,
+        weatherHumidity: _weatherSnapshot?.humidity,
+        weatherWindKmh: _weatherSnapshot?.windSpeedKmh,
+        weatherCode: _weatherSnapshot?.weatherCode,
+      );
+      syncServiceInstance.syncActivity(activityLogData);
     }
 
     // Reset semua state

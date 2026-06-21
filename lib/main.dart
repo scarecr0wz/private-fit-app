@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'router.dart';
 import 'theme.dart';
 
+import 'data/auth_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -16,7 +18,16 @@ void main() async {
     ),
   );
 
-  runApp(const ProviderScope(child: FitFad()));
+  // Inisialisasi Riverpod Container
+  final container = ProviderContainer();
+  
+  // Eksekusi Silent Login ke VPS (Hono)
+  await container.read(authServiceProvider).silentLogin();
+
+  runApp(UncontrolledProviderScope(
+    container: container,
+    child: const FitFad(),
+  ));
 }
 
 class FitFad extends StatelessWidget {

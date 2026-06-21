@@ -1,0 +1,82 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  passwordHash String
+  createdAt    DateTime      @default(now())
+  foodLogs     FoodLog[]
+  workoutLogs  WorkoutLog[]
+  activities   ActivityLog[]
+  bodyWeights  BodyWeight[]
+}
+
+model FoodLog {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  date      DateTime
+  foodName  String
+  grams     Float
+  calories  Float
+  protein   Float
+  carbs     Float
+  fat       Float
+  createdAt DateTime @default(now())
+}
+
+model WorkoutLog {
+  id              Int          @id @default(autoincrement())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id])
+  date            DateTime
+  templateName    String
+  durationMinutes Int
+  totalVolumeKg   Float
+  caloriesBurned  Float        @default(0.0)
+  sets            WorkoutSet[]
+  createdAt       DateTime     @default(now())
+}
+
+model WorkoutSet {
+  id           Int        @id @default(autoincrement())
+  workoutLogId Int
+  workoutLog   WorkoutLog @relation(fields: [workoutLogId], references: [id], onDelete: Cascade)
+  exerciseName String
+  reps         Int
+  weightKg     Float
+}
+
+model ActivityLog {
+  id              Int      @id @default(autoincrement())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  date            DateTime
+  type            String
+  durationSeconds Int
+  distanceMeters  Float
+  caloriesBurned  Float
+  routePoints     String   
+  weatherTemp     Float?
+  weatherHumidity Float?
+  weatherWindKmh  Float?
+  weatherCode     Int?
+  createdAt       DateTime @default(now())
+}
+
+model BodyWeight {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  date      DateTime
+  weightKg  Float
+  createdAt DateTime @default(now())
+}

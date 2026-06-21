@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.0] - 2026-06-21
+
+### Added
+- **Backend API**: Created a complete Node.js backend using Hono and Prisma ORM, providing secure JWT-protected REST API endpoints for all core app features.
+- **Sync System**: Implemented a resilient Silent Login system that automatically registers and authenticates the user transparently on startup without a login screen.
+- **Optimistic Sync**: Added an automatic background synchronization layer (`SyncService`) using `dio` that seamlessly pushes Food, Gym, and Activity logs from the local SQLite database directly to the new VPS backend without blocking the UI.
+
 ## [1.10.1] - 2026-06-21
 
 ### Added

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:drift/drift.dart' as drift;
 import '../../data/database.dart';
+import '../../data/sync_service.dart';
 import '../../theme.dart';
 import 'gym_dummy.dart' as dummy;
 import '../../widgets/profile_avatar.dart';
@@ -86,17 +88,37 @@ class _GymScreenState extends State<GymScreen> {
     }
     
     await db.transaction(() async {
+      final now = DateTime.now();
       final logId = await db.into(db.workoutLogs).insert(WorkoutLogsCompanion.insert(
-        date: DateTime.now(),
+        date: now,
         templateName: 'Push Day',
         durationMinutes: durationMinutes,
         totalVolumeKg: totalVolume,
         caloriesBurned: drift.Value(durationMinutes * 5.0),
       ));
       
+      final savedSets = <WorkoutSet>[];
       for (var s in setsToInsert) {
-        await db.into(db.workoutSets).insert(s.copyWith(workoutLogId: drift.Value(logId)));
+        final setId = await db.into(db.workoutSets).insert(s.copyWith(workoutLogId: drift.Value(logId)));
+        savedSets.add(WorkoutSet(
+          id: setId,
+          workoutLogId: logId,
+          exerciseName: s.exerciseName.value,
+          reps: s.reps.value,
+          weightKg: s.weightKg.value,
+        ));
       }
+
+      // Sync ke VPS Backend
+      final workoutLog = WorkoutLog(
+        id: logId,
+        date: now,
+        templateName: 'Push Day',
+        durationMinutes: durationMinutes,
+        totalVolumeKg: totalVolume,
+        caloriesBurned: durationMinutes * 5.0,
+      );
+      syncServiceInstance.syncWorkout(workoutLog, savedSets);
     });
 
     if (mounted) {

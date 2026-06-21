@@ -9,6 +9,7 @@ import '../../data/database.dart';
 import 'food_dummy.dart';
 import 'package:drift/drift.dart' as drift;
 import '../../widgets/profile_avatar.dart';
+import '../../data/sync_service.dart';
 
 class FoodScreen extends StatefulWidget {
   const FoodScreen({super.key});
@@ -1690,17 +1691,30 @@ class _AddFoodSheet3DState extends State<_AddFoodSheet3D> {
             label: 'Tambah ke Log',
             onTap: () async {
               // Save to SQLite
-              await db.into(db.foodLogs).insert(
-                FoodLogsCompanion.insert(
-                  date: DateTime.now(),
-                  foodName: widget.food.name,
-                  grams: _grams,
-                  calories: _calories.toDouble(),
-                  protein: (widget.food.protein * _grams / 100),
-                  carbs: (widget.food.carbs * _grams / 100),
-                  fat: (widget.food.fat * _grams / 100),
-                ),
+              final now = DateTime.now();
+              final insertData = FoodLogsCompanion.insert(
+                date: now,
+                foodName: widget.food.name,
+                grams: _grams,
+                calories: _calories.toDouble(),
+                protein: (widget.food.protein * _grams / 100),
+                carbs: (widget.food.carbs * _grams / 100),
+                fat: (widget.food.fat * _grams / 100),
               );
+              final insertedId = await db.into(db.foodLogs).insert(insertData);
+              
+              // Trigger Background Sync ke Hono VPS
+              final foodLogData = FoodLog(
+                id: insertedId,
+                date: now,
+                foodName: widget.food.name,
+                grams: _grams,
+                calories: _calories.toDouble(),
+                protein: (widget.food.protein * _grams / 100),
+                carbs: (widget.food.carbs * _grams / 100),
+                fat: (widget.food.fat * _grams / 100),
+              );
+              syncServiceInstance.syncFood(foodLogData);
 
               if (!context.mounted) return;
               Navigator.pop(context);
