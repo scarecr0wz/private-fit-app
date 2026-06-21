@@ -1,8 +1,6 @@
 name: Build iOS
 
-on:
-  push:
-    branches: [ main ]
+on: workflow_dispatch:
 
 jobs:
   build-ios:
@@ -85,10 +83,10 @@ jobs:
         cp -r "$APP_PATH" build/ios/iphoneos/Payload/
 
     - name: Create IPA
-      run: cd build/ios/iphoneos && zip -r Fit-App.ipa Payload
+      run: cd build/ios/iphoneos && zip -r FitFad.ipa Payload
 
     - name: Upload IPA artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Fit-App-${{ github.sha }}
-        path: build/ios/iphoneos/Fit-App.ipa
+        name: FitFad-${{ github.sha }}
+        path: build/ios/iphoneos/FitFad.ipa
