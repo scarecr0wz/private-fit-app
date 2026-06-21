@@ -5,6 +5,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
+import 'package:flutter_screen_recording/flutter_screen_recording.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../data/database.dart';
 import '../../theme.dart';
@@ -31,6 +33,7 @@ class _Flyover3DScreenState extends State<Flyover3DScreen> {
   bool _isStyleLoaded = false;
   bool _isResetting = false;
   bool _cameraFollowMode = true; // third-person follow cam
+  bool _isRecording = false;
 
   // ── Timer-based animation ────────────────────────────────────────────────
   Timer? _playTimer;
@@ -248,6 +251,9 @@ class _Flyover3DScreenState extends State<Flyover3DScreen> {
     if (_currentIndex >= _route.length - 1) {
       _stopTimer();
       if (mounted) setState(() => _isPlaying = false);
+      if (_isRecording) {
+        _stopRecordingAndShare();
+      }
       return;
     }
 
@@ -405,6 +411,42 @@ class _Flyover3DScreenState extends State<Flyover3DScreen> {
     }
   }
 
+  Future<void> _startRecordingAndPlay() async {
+    await _resetAndPlay();
+    _stopTimer(); 
+    if (!mounted) return;
+    setState(() => _isRecording = true);
+
+    try {
+      final started = await FlutterScreenRecording.startRecordScreen("fitfad_flyover", titleNotification: "FitFad", messageNotification: "Recording flyover...");
+      if (started == true) {
+        await Future.delayed(const Duration(seconds: 1)); // wait for OS prompt to vanish
+        if (mounted) {
+          setState(() => _isPlaying = true);
+          _startTimer();
+        }
+      } else {
+        if (mounted) setState(() => _isRecording = false);
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isRecording = false);
+      debugPrint("Recording failed: $e");
+    }
+  }
+
+  Future<void> _stopRecordingAndShare() async {
+    try {
+      final path = await FlutterScreenRecording.stopRecordScreen;
+      if (mounted) setState(() => _isRecording = false);
+      if (path.isNotEmpty) {
+        await Share.shareXFiles([XFile(path)], text: 'Check out my 3D flyover on FitFad!');
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isRecording = false);
+      debugPrint("Stop recording failed: $e");
+    }
+  }
+
   void _toggleCameraMode() {
     setState(() => _cameraFollowMode = !_cameraFollowMode);
     if (!_cameraFollowMode) {
@@ -470,9 +512,9 @@ class _Flyover3DScreenState extends State<Flyover3DScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       extendBodyBehindAppBar: true,
-      appBar: _buildAppBar(),
+      backgroundColor: AppColors.background,
+      appBar: _isRecording ? null : _buildAppBar(),
       body: Stack(
         children: [
           // ── Map ────────────────────────────────────────────────────────
@@ -519,10 +561,31 @@ class _Flyover3DScreenState extends State<Flyover3DScreen> {
               ),
             ),
 
+          // ── FitFad Logo (Recording Mode) ────────────────────────────────
+          if (_isRecording)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 20,
+              left: 20,
+              child: Row(
+                children: [
+                  const Icon(Icons.fitness_center, color: AppColors.primary, size: 28),
+                  const SizedBox(width: 8),
+                  Text(
+                    'FitFad',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      shadows: const [Shadow(color: Colors.black54, blurRadius: 4)],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
           // ── Stats HUD ───────────────────────────────────────────────────
           if (_isStyleLoaded && _route.isNotEmpty)
             Positioned(
-              top: MediaQuery.of(context).padding.top + kToolbarHeight + 8,
+              top: _isRecording ? MediaQuery.of(context).padding.top + 70 : MediaQuery.of(context).padding.top + kToolbarHeight + 8,
               left: 12,
               right: 12,
               child: _StatsHud(
@@ -535,9 +598,10 @@ class _Flyover3DScreenState extends State<Flyover3DScreen> {
             ),
 
           // ── Bottom panel (progress + controls) ─────────────────────────
-          Positioned(
-            bottom: 0,
-            left: 0,
+          if (!_isRecording)
+            Positioned(
+              bottom: 0,
+              left: 0,
             right: 0,
             child: _BottomPanel(
               progress: _progress,
@@ -588,6 +652,12 @@ class _Flyover3DScreenState extends State<Flyover3DScreen> {
             icon: const Icon(Icons.replay_rounded, color: Colors.white),
             tooltip: 'Restart',
             onPressed: _resetAndPlay,
+          ),
+        if (_isStyleLoaded && !_isResetting)
+          IconButton(
+            icon: const Icon(Icons.video_camera_front_rounded, color: AppColors.primary),
+            tooltip: 'Record Video & Share',
+            onPressed: _startRecordingAndPlay,
           ),
       ],
     );
