@@ -132,8 +132,6 @@ class _StatsScreenState extends State<StatsScreen> {
                                   const SizedBox(height: 24),
                                   _buildCalorieChartCard(activities, workouts),
                                   const SizedBox(height: 24),
-                                  _buildWeightChartCard(weights),
-                                  const SizedBox(height: 32),
                                   Text(
                                     'Activity History',
                                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
