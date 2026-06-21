@@ -34,6 +34,7 @@ It helps you log your meals, scan barcodes, track outdoor runs and rides with GP
 - Intake vs outtake stats in pill cards
 - Recent activity feed (running, cycling, gym)
 - Today's meal history with timestamps and calories
+- **Weather Widget**: Real-time forecasts via Open-Meteo with dynamic exercise suitability messages and day/night emojis
 - Quick action FAB to open the Food Logger
 
 ### 🍽️ Food Logger
@@ -45,7 +46,10 @@ It helps you log your meals, scan barcodes, track outdoor runs and rides with GP
 
 ### 🏃 Activity Tracker (GPS)
 - Real-time outdoor activity tracking with **FlutterMap** (CartoDB dark tiles)
+- **True Background Tracking**: OS-level persistence via Android Foreground Service & iOS Background Location
 - Two modes: **Running** (pace in min/km) and **Cycling** (speed in km/h)
+- Automated **Elevation Gain** calculation with noise filtering
+- **Weather Snapshot**: Automatically captured silently at the start of the activity
 - 5-second countdown before starting
 - Live stats overlay: duration, distance, pace/speed, estimated calories
 - Start / Pause / Stop controls with 3D buttons
@@ -63,10 +67,13 @@ It helps you log your meals, scan barcodes, track outdoor runs and rides with GP
 - **Bar chart** — daily calories burned (this week / this month)
 - **Line chart** — body weight trend (last 7 entries)
 - Combined activity history (outdoor + gym), sorted by date
-- **Activity Detail** — route map with pace-colored polyline:
-  - Green (fast), Yellow (moderate), Red (slow)
+- **Activity Detail**:
+  - **3D Route Replay**: Cinematic Strava-style playback utilizing MapLibre GL and MapTiler 3D terrain
+  - **Elevation Profile**: Interactive area chart visualizing route altitude
+  - **Weather Context**: Displays conditions recorded at activity start
+  - Route map with pace-colored polyline: Green (fast), Yellow (moderate), Red (slow)
   - Pace checkpoint every 0.5km with colored bubbles
-  - Pace history with horizontal progress bars
+  - Pace history with horizontal progress bars highlighting faster/slower segments
 
 ### 🎨 UI & Theme
 - **Dark theme** with **glassmorphism** and 3D accents
@@ -85,10 +92,10 @@ It helps you log your meals, scan barcodes, track outdoor runs and rides with GP
 | **State Management** | Riverpod (`flutter_riverpod`) + ChangeNotifier |
 | **Navigation** | GoRouter 13.x (ShellRoute + bottom nav) |
 | **Database** | Drift 2.34 (SQLite ORM, code-generated) |
-| **Maps** | FlutterMap + OpenStreetMap (CartoDB dark tiles) |
-| **Location** | Geolocator (GPS streaming) |
+| **Maps** | FlutterMap • MapLibre GL • MapTiler 3D Terrain |
+| **Location** | Geolocator • flutter_background_service |
 | **Scanner** | Mobile Scanner (barcode) |
-| **APIs** | USDA FoodData Central • Open Food Facts v3 |
+| **APIs** | USDA FoodData Central • Open Food Facts v3 • Open-Meteo |
 | **Charts** | fl_chart • CustomPaint |
 | **CI/CD** | GitHub Actions (iOS build → .ipa artifact) |
 
@@ -113,8 +120,9 @@ lib/
 │   ├── splash/                # Animated splash screen
 │   ├── dashboard/             # Daily summary & stats
 │   ├── food/                  # Food search, barcode scan, nutrition chart
-│   ├── activity/              # GPS tracking, route map, activity detail
+│   ├── activity/              # GPS tracking, 3D route replay, activity detail
 │   ├── gym/                   # Workout logging & set tracking
+│   ├── weather/               # Open-Meteo integration & caching
 │   └── stats/                 # Charts & activity history
 └── shared/
     └── widgets/               # CalorieRing, GlassCard, 3D buttons, etc.
@@ -187,10 +195,12 @@ fitfad/
 
 ## 🗺️ Roadmap
 
-### ✅ Shipped (v1.0.0 – v1.5.0)
-- [x] Dashboard with CalorieRing
+### ✅ Shipped (v1.0.0 – v1.9.0)
+- [x] Dashboard with CalorieRing & Weather Suitability Widget
 - [x] Food search (USDA API) & barcode scanner (Open Food Facts)
-- [x] GPS outdoor activity tracking (running / cycling)
+- [x] GPS outdoor activity tracking with true background persistence
+- [x] Cinematic 3D Route Replay (MapLibre + MapTiler)
+- [x] Elevation profiling & automated weather snapshotting
 - [x] Gym workout logging with sets & reps
 - [x] Stats charts & activity history
 - [x] Route review with pace-colored polyline
