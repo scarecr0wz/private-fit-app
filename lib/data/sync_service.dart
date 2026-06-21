@@ -110,14 +110,19 @@ class SyncService {
     }
   }
 
+  // Menyimpan status/error log untuk ditampilkan di UI jika diperlukan
+  String latestSyncLog = 'Menunggu pengecekan...';
+
   /// 🔄 Restore dari VPS (Hanya jika SQLite lokal kosong)
   Future<void> restoreFromVpsIfEmpty() async {
     try {
+      latestSyncLog = 'Mengecek isi SQLite...';
       final foodCount = (await db.select(db.foodLogs).get()).length;
       final activityCount = (await db.select(db.activityLogs).get()).length;
       final workoutCount = (await db.select(db.workoutLogs).get()).length;
 
       if (foodCount == 0 && activityCount == 0 && workoutCount == 0) {
+        latestSyncLog = 'Mengunduh riwayat dari VPS...';
         print('⏳ [Sync] SQLite kosong. Mendownload riwayat dari VPS...');
 
         // 1. Restore Food
@@ -178,11 +183,14 @@ class SyncService {
             }
           }
         }
+        latestSyncLog = 'Selesai merestore semua data.';
         print('✅ [Sync] Selesai merestore semua data dari VPS ke SQLite lokal.');
       } else {
+        latestSyncLog = 'SQLite sudah ada datanya (Food: $foodCount, Act: $activityCount, Gym: $workoutCount).';
         print('ℹ️ [Sync] SQLite sudah ada datanya, lewati proses Restore.');
       }
     } catch (e) {
+      latestSyncLog = 'Gagal merestore: $e';
       print('❌ [Sync Error] Gagal merestore dari VPS: $e');
     }
   }

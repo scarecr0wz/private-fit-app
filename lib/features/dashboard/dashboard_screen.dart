@@ -11,12 +11,27 @@ import '../weather/weather_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../profile/profile_provider.dart';
 import '../../widgets/profile_avatar.dart';
+import '../../data/sync_service.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (syncServiceInstance.latestSyncLog.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(syncServiceInstance.latestSyncLog),
+            backgroundColor: syncServiceInstance.latestSyncLog.contains('Gagal') ? AppColors.errorContainer : AppColors.surfaceVariant,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 8),
+          )
+        );
+        syncServiceInstance.latestSyncLog = ''; // Clear it so it only shows once
+      }
+    });
+
     final profile = ref.watch(profileProvider);
 
     // Calculate Calorie Goal (Mifflin-St Jeor)
