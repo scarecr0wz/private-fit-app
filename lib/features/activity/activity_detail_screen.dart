@@ -42,6 +42,7 @@ class ActivityDetailScreen extends StatelessWidget {
     double cumulativeDist = 0.0;
     double minAlt = double.infinity;
     double maxAlt = double.negativeInfinity;
+    double? initialAlt;
 
     if (activity.routePoints.isNotEmpty) {
       try {
@@ -57,21 +58,25 @@ class ActivityDetailScreen extends StatelessWidget {
           }
 
           if (p.containsKey('alt')) {
-            final double alt = (p['alt'] as num).toDouble();
+            double alt = (p['alt'] as num).toDouble();
+            
+            if (initialAlt == null) {
+              initialAlt = alt;
+              currentBaselineAlt = 0.0;
+            }
+            
+            alt = alt - initialAlt!;
+
             elevationSpots.add(FlSpot(cumulativeDist, alt));
             if (alt < minAlt) minAlt = alt;
             if (alt > maxAlt) maxAlt = alt;
 
-            if (i == 0) {
+            final altDiff = alt - currentBaselineAlt;
+            if (altDiff >= 2.0) {
+              elevationGain += altDiff;
               currentBaselineAlt = alt;
-            } else {
-              final altDiff = alt - currentBaselineAlt;
-              if (altDiff >= 2.0) {
-                elevationGain += altDiff;
-                currentBaselineAlt = alt;
-              } else if (altDiff <= -2.0) {
-                currentBaselineAlt = alt;
-              }
+            } else if (altDiff <= -2.0) {
+              currentBaselineAlt = alt;
             }
           }
         }

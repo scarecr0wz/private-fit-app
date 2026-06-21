@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.9.1] - 2026-06-21
+
+### Changed
+- **Activity Detail**: Normalized Elevation Profile data to always start at 0m, making the chart show relative elevation changes instead of absolute sea-level altitude. Elevation Gain calculations remain accurate and unaffected.
+
 ## [1.9.0] - 2026-06-21
 
 ### Changed
