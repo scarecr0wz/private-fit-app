@@ -337,6 +337,104 @@ class _ActivityScreenState extends State<ActivityScreen> {
     );
   }
 
+  void _stopAndShowSummary() {
+    final type = _svc.activityType;
+    final duration = _svc.duration;
+    final distance = _svc.distanceKm;
+    final calories = _svc.calories;
+    final pace = _svc.speedDisplay;
+    final elevation = _svc.elevationGain;
+
+    _svc.stopActivity();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        final iconStr = type == OutdoorActivityType.bike ? '🚴' : '🏃';
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A1A2A),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+          ),
+          title: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                iconStr,
+                style: const TextStyle(fontSize: 48),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Activity Summary',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildSummaryRow(Icons.timer_outlined, 'Duration', _formatDuration(duration)),
+              const SizedBox(height: 16),
+              _buildSummaryRow(Icons.straighten, 'Distance', '${distance.toStringAsFixed(2)} km'),
+              const SizedBox(height: 16),
+              _buildSummaryRow(Icons.local_fire_department_outlined, 'Calories', '$calories kcal'),
+              const SizedBox(height: 16),
+              _buildSummaryRow(Icons.speed, 'Avg Pace', pace),
+              const SizedBox(height: 16),
+              _buildSummaryRow(Icons.terrain, 'Elevation Gain', '${elevation.toStringAsFixed(0)} m'),
+            ],
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  context.go('/dashboard');
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: const Text('DONE', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildSummaryRow(IconData icon, String label, String value) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.secondary, size: 24),
+          const SizedBox(width: 12),
+          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+          const Spacer(),
+          Text(value, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDivider() {
     return Container(
       width: 1,
@@ -372,7 +470,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
         const SizedBox(width: 32),
         _CircleBtn3DError(
           icon: Icons.stop,
-          onTap: () => _svc.stopActivity(),
+          onTap: _stopAndShowSummary,
         ),
         const SizedBox(width: 32),
         _CircleBtn3DSecondary(

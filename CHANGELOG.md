@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.10.1] - 2026-06-21
+
+### Added
+- **Activity**: Added an Activity Summary pop-up dialog that displays duration, distance, calories, average pace, and elevation gain when the user stops an activity.
+
 ## [1.10.0] - 2026-06-21
 
 ### Added
