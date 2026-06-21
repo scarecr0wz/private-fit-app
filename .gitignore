@@ -46,3 +46,4 @@ app.*.map.json
 
 # Prompts (local only)
 prompts/
+test/
