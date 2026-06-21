@@ -163,8 +163,10 @@ class _StatsScreenState extends State<StatsScreen> {
                                   const SizedBox(height: 20),
                                   _buildToggle(),
                                   const SizedBox(height: 24),
-                                  _buildOutdoorSummary(activities),
-                                  const SizedBox(height: 24),
+                                  if (activities.isNotEmpty) ...[
+                                    _buildOutdoorSummary(activities),
+                                    const SizedBox(height: 24),
+                                  ],
                                   _buildCalorieChartCard(activities, workouts),
                                   const SizedBox(height: 24),
                                   Text(
@@ -342,10 +344,12 @@ class _StatsScreenState extends State<StatsScreen> {
   }
 
   Widget _buildOutdoorSummary(List<ActivityLog> activities) {
-    int totalActivities = activities.isEmpty ? 15 : activities.length;
-    double totalDistanceKm = activities.isEmpty ? 124.5 : activities.fold(0.0, (sum, a) => sum + a.distanceMeters) / 1000;
-    double totalCalories = activities.isEmpty ? 8430.0 : activities.fold(0.0, (sum, a) => sum + a.caloriesBurned);
-    int totalDurationSecs = activities.isEmpty ? (124.5 * 5.75 * 60).toInt() : activities.fold(0, (sum, a) => sum + a.durationSeconds);
+    if (activities.isEmpty) return const SizedBox.shrink();
+
+    int totalActivities = activities.length;
+    double totalDistanceKm = activities.fold(0.0, (sum, a) => sum + a.distanceMeters) / 1000;
+    double totalCalories = activities.fold(0.0, (sum, a) => sum + a.caloriesBurned);
+    int totalDurationSecs = activities.fold(0, (sum, a) => sum + a.durationSeconds);
 
     String avgPaceStr = "-'--\"";
     if (totalDistanceKm > 0) {
