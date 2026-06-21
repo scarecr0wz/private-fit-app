@@ -10,6 +10,7 @@
 - **Activity Detail**: Added a Pace Profile Chart below the Elevation Profile to visualize pacing dynamics.
 
 ### Changed
+- **Food**: Replaced the USDA FoodData Central API with the FatSecret API for comprehensive local and global food database searches using OAuth 2.0 client credentials.
 - **UI Consistency**: Standardized the top app bar across Dashboard, Food, Gym, and Stats screens to use a global `ProfileAvatar` component that displays the user's actual profile picture instead of a generic placeholder.
 - **Activity Detail**: Refactored the Weather section into a compact, space-saving text format below the main statistics.
 

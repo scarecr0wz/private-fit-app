@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -47,8 +48,32 @@ class _FoodScreenState extends State<FoodScreen> {
 
     if (_debounce?.isActive ?? false) _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
-      _fetchUSDA(q);
+      _fetchFatSecret(q);
     });
+  }
+
+  String? _fatSecretToken;
+
+  Future<String> _getFatSecretToken() async {
+    if (_fatSecretToken != null) return _fatSecretToken!;
+    
+    final dio = _createDio();
+    final clientId = '9302f113adab4a27a92a7738f2e628f0';
+    final clientSecret = 'ee8ca330c20844a58f41d72f6d617aae';
+    final basicAuth = base64Encode(utf8.encode('$clientId:$clientSecret'));
+    
+    final response = await dio.post(
+      'https://oauth.fatsecret.com/connect/token',
+      data: 'grant_type=client_credentials&scope=basic',
+      options: Options(
+        headers: {
+          'Authorization': 'Basic $basicAuth',
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      ),
+    );
+    _fatSecretToken = response.data['access_token'];
+    return _fatSecretToken!;
   }
 
   Dio _createDio() {
@@ -74,11 +99,13 @@ class _FoodScreenState extends State<FoodScreen> {
       if (e.type == DioExceptionType.connectionError) {
         return 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
       }
+    } else if (e is Exception) {
+      return e.toString().replaceAll('Exception: ', '');
     }
     return 'Terjadi kesalahan. Silakan coba lagi.';
   }
 
-  Future<void> _fetchUSDA(String query) async {
+  Future<void> _fetchFatSecret(String query) async {
     setState(() {
       _isLoading = true;
       _hasSearched = true;
@@ -86,51 +113,72 @@ class _FoodScreenState extends State<FoodScreen> {
     });
 
     try {
+      final token = await _getFatSecretToken();
       final dio = _createDio();
       final response = await dio.get(
-        'https://api.nal.usda.gov/fdc/v1/foods/search',
+        'https://platform.fatsecret.com/rest/server.api',
         queryParameters: {
-          'query': query,
-          'api_key': 'DEMO_KEY',
-          'pageSize': 10,
+          'method': 'foods.search',
+          'search_expression': query,
+          'format': 'json',
+          'max_results': 15,
+          'region': 'ID',
         },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
       );
 
-      final List foods = response.data['foods'] ?? [];
+      final errorData = response.data['error'];
+      if (errorData != null) {
+        throw Exception(errorData['message'] ?? 'FatSecret API Error');
+      }
+
+      final data = response.data['foods'];
+      if (data == null || data['food'] == null) {
+        if (mounted) {
+          setState(() {
+            _results = [];
+          });
+        }
+        return;
+      }
+
+      final foodData = data['food'];
+      final List foods = foodData is List ? foodData : [foodData];
       final List<FoodItem> parsedResults = [];
 
       for (var food in foods) {
-        final description = food['description'] ?? 'Unknown';
-        final nutrients = food['foodNutrients'] as List? ?? [];
+        final name = food['food_name'] ?? 'Unknown';
+        final description = food['food_description'] ?? '';
+        final foodId = food['food_id']?.toString() ?? '';
         
+        // Parse "Per 100g - Calories: 52kcal | Fat: 0.17g | Carbs: 13.81g | Protein: 0.26g"
         double energy = 0;
         double protein = 0;
         double carbs = 0;
         double fat = 0;
 
-        for (var n in nutrients) {
-          final name = (n['nutrientName'] ?? '').toString().toLowerCase();
-          final value = (n['value'] ?? 0).toDouble();
-          
-          if (name.contains('energy')) {
-            energy = value;
-          } else if (name.contains('protein')) {
-            protein = value;
-          } else if (name.contains('carbohydrate')) {
-            carbs = value;
-          } else if (name.contains('lipid') || name.contains('fat')) {
-            fat = value;
-          }
-        }
+        final calMatch = RegExp(r'Calories:\s*([0-9.]+)\s*kcal').firstMatch(description);
+        final fatMatch = RegExp(r'Fat:\s*([0-9.]+)\s*g').firstMatch(description);
+        final carbsMatch = RegExp(r'Carbs:\s*([0-9.]+)\s*g').firstMatch(description);
+        final proteinMatch = RegExp(r'Protein:\s*([0-9.]+)\s*g').firstMatch(description);
+
+        if (calMatch != null) energy = double.tryParse(calMatch.group(1) ?? '0') ?? 0;
+        if (fatMatch != null) fat = double.tryParse(fatMatch.group(1) ?? '0') ?? 0;
+        if (carbsMatch != null) carbs = double.tryParse(carbsMatch.group(1) ?? '0') ?? 0;
+        if (proteinMatch != null) protein = double.tryParse(proteinMatch.group(1) ?? '0') ?? 0;
 
         parsedResults.add(FoodItem(
-          id: food['fdcId'].toString(),
-          name: description,
+          id: foodId,
+          name: name,
           caloriesPer100g: energy.toInt(),
           protein: protein,
           carbs: carbs,
           fat: fat,
-          imageUrl: food['image'],
+          imageUrl: null, // FatSecret search doesn't return images directly
         ));
       }
 
@@ -140,6 +188,10 @@ class _FoodScreenState extends State<FoodScreen> {
         });
       }
     } catch (e) {
+      if (e is DioException && e.response?.statusCode == 401) {
+        // Token might have expired
+        _fatSecretToken = null;
+      }
       _showError(_errorMessage(e));
     } finally {
       if (mounted) {
