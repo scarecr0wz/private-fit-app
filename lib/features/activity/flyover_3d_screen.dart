@@ -102,6 +102,7 @@ class _Flyover3DScreenState extends State<Flyover3DScreen> {
       final decoded = jsonDecode(widget.activity.routePoints) as List;
       const calc = ll.Distance();
       double cumDist = 0.0;
+      double? initialAlt;
 
       for (int i = 0; i < decoded.length; i++) {
         final p = decoded[i];
@@ -111,7 +112,13 @@ class _Flyover3DScreenState extends State<Flyover3DScreen> {
         );
         _route.add(point);
         _pacePerPoint.add((p['pace'] as num? ?? -1).toDouble());
-        _altPerPoint.add((p['alt'] as num? ?? 0).toDouble());
+        
+        double alt = (p['alt'] as num? ?? 0).toDouble();
+        if (p.containsKey('alt')) {
+          initialAlt ??= alt;
+          alt = alt - initialAlt;
+        }
+        _altPerPoint.add(alt);
 
         if (i > 0) {
           cumDist += calc.distance(_route[i - 1], point) / 1000.0;

@@ -397,7 +397,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  context.go('/dashboard');
+                  context.go('/');
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,

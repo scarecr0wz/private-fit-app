@@ -9,6 +9,10 @@
 ### Changed
 - **Activity Detail**: Refactored the Weather section into a compact, space-saving text format below the main statistics.
 
+### Fixed
+- **Activity**: Fixed a routing error (`Page Not found`) that occurred when pressing the "DONE" button after recording an activity by directing it to the correct root dashboard route.
+- **Activity 3D Flyover**: Fixed altitude statistics not starting at 0m by calculating relative altitude from the starting point instead of using raw sea-level data.
+
 ## [1.10.0] - 2026-06-21
 
 ### Added
