@@ -65,7 +65,7 @@ class _WeatherCardState extends State<WeatherCard> {
             children: [
               Expanded(child: widget.greeting!),
               const SizedBox(width: 16),
-              Flexible(child: weatherContent),
+              weatherContent,
             ],
           ),
           if (!_loading && _error == null && _weather != null) ...[
