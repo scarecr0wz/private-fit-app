@@ -1,7 +1,9 @@
 name: Build iOS
 
-on: workflow_dispatch
-
+on: 
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
 jobs:
   build-ios:
     runs-on: macos-latest
