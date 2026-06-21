@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 import '../../data/database.dart';
+import '../../data/sync_service.dart';
 import '../../theme.dart';
 import '../activity/activity_detail_screen.dart';
 import '../../widgets/profile_avatar.dart';
@@ -192,73 +194,124 @@ class _StatsScreenState extends State<StatsScreen> {
 
                                       return Padding(
                                         padding: const EdgeInsets.only(bottom: 12.0),
-                                        child: GestureDetector(
-                                          onTap: () {
-                                            if (type == 'run' || type == 'bike') {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (context) => ActivityDetailScreen(activity: a['raw']),
-                                                ),
-                                              );
+                                        child: Dismissible(
+                                          key: Key('activity_${a['raw'].id}_$type'),
+                                          direction: DismissDirection.endToStart,
+                                          background: Container(
+                                            alignment: Alignment.centerRight,
+                                            padding: const EdgeInsets.only(right: 20),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.errorContainer,
+                                              borderRadius: BorderRadius.circular(24),
+                                            ),
+                                            child: const Icon(Icons.delete_outline, color: AppColors.onErrorContainer),
+                                          ),
+                                          confirmDismiss: (_) async {
+                                            final confirm = await showDialog<bool>(
+                                              context: context,
+                                              builder: (ctx) => AlertDialog(
+                                                backgroundColor: AppColors.surfaceContainerHigh,
+                                                title: const Text('Delete Activity?'),
+                                                content: Text('Are you sure you want to delete this $label?'),
+                                                actions: [
+                                                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                                                  TextButton(
+                                                    onPressed: () => Navigator.pop(ctx, true),
+                                                    child: const Text('Delete', style: TextStyle(color: AppColors.error)),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                            if (confirm == true) {
+                                              if (type == 'gym') {
+                                                await db.workoutLogs.deleteWhere((t) => t.id.equals(a['raw'].id));
+                                                try {
+                                                  await syncServiceInstance.deleteWorkout(a['raw'].id);
+                                                } catch (_) {}
+                                              } else {
+                                                await db.activityLogs.deleteWhere((t) => t.id.equals(a['raw'].id));
+                                                try {
+                                                  await syncServiceInstance.deleteActivity(a['raw'].id);
+                                                } catch (_) {}
+                                              }
                                             }
+                                            return confirm;
                                           },
-                                          child: _GlassCard(
-                                            child: Row(
-                                              children: [
-                                                Container(
-                                                  width: 48,
-                                                  height: 48,
-                                                  decoration: BoxDecoration(
-                                                    color: AppColors.surfaceContainerHigh,
-                                                    borderRadius: BorderRadius.circular(16),
-                                                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                                          child: GestureDetector(
+                                            onTap: () {
+                                              if (type == 'run' || type == 'bike') {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) => ActivityDetailScreen(activity: a['raw']),
                                                   ),
-                                                  child: Icon(
-                                                    type == 'run' ? Icons.directions_run : (type == 'bike' ? Icons.directions_bike : Icons.fitness_center),
-                                                    color: AppColors.secondary,
+                                                );
+                                              }
+                                            },
+                                            child: _GlassCard(
+                                              child: Row(
+                                                children: [
+                                                  Container(
+                                                    width: 48,
+                                                    height: 48,
+                                                    decoration: BoxDecoration(
+                                                      color: AppColors.surfaceContainerHigh,
+                                                      borderRadius: BorderRadius.circular(16),
+                                                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                                                    ),
+                                                    child: Icon(
+                                                      type == 'run' ? Icons.directions_run : (type == 'bike' ? Icons.directions_bike : Icons.fitness_center),
+                                                      color: AppColors.secondary,
+                                                    ),
                                                   ),
-                                                ),
-                                                const SizedBox(width: 16),
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                  const SizedBox(width: 16),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Text(
+                                                          label,
+                                                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                                                color: AppColors.onSurface,
+                                                                fontWeight: FontWeight.bold,
+                                                              ),
+                                                        ),
+                                                        Text(
+                                                          DateFormat('dd MMM yyyy, HH:mm').format(a['date']),
+                                                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                                                color: AppColors.primary,
+                                                              ),
+                                                        ),
+                                                        const SizedBox(height: 2),
+                                                        Text(
+                                                          detail,
+                                                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                                color: AppColors.onSurfaceVariant,
+                                                              ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.end,
                                                     children: [
                                                       Text(
-                                                        label,
+                                                        '${a['calories']}',
                                                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                                              color: AppColors.onSurface,
+                                                              color: AppColors.secondary,
                                                               fontWeight: FontWeight.bold,
                                                             ),
                                                       ),
                                                       Text(
-                                                        detail,
-                                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                        'kcal',
+                                                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                                               color: AppColors.onSurfaceVariant,
                                                             ),
                                                       ),
                                                     ],
                                                   ),
-                                                ),
-                                                Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                                  children: [
-                                                    Text(
-                                                      '${a['calories']}',
-                                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                                            color: AppColors.secondary,
-                                                            fontWeight: FontWeight.bold,
-                                                          ),
-                                                    ),
-                                                    Text(
-                                                      'kcal',
-                                                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                                            color: AppColors.onSurfaceVariant,
-                                                          ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ],
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         ),

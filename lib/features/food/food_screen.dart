@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:dio/dio.dart';
 import '../../theme.dart';
@@ -804,41 +805,83 @@ class _FoodScreenState extends State<FoodScreen> {
               );
             }
             final log = logs[i - 2];
-            return _GlassCard(
-              child: Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.check_circle, color: AppColors.secondary),
+            return Dismissible(
+              key: Key('food_${log.id}'),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 20),
+                decoration: BoxDecoration(
+                  color: AppColors.errorContainer,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: const Icon(Icons.delete_outline, color: AppColors.onErrorContainer),
+              ),
+              confirmDismiss: (_) async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    backgroundColor: AppColors.surfaceContainerHigh,
+                    title: const Text('Delete Food?'),
+                    content: Text('Are you sure you want to delete ${log.foodName}?'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: const Text('Delete', style: TextStyle(color: AppColors.error)),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(log.foodName, style: Theme.of(context).textTheme.titleMedium),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Text('${log.calories.toInt()} kcal', style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold, fontSize: 12)),
-                            const SizedBox(width: 8),
-                            Text('P: ${log.protein.toStringAsFixed(1)}g', style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
-                            const SizedBox(width: 8),
-                            Text('C: ${log.carbs.toStringAsFixed(1)}g', style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
-                            const SizedBox(width: 8),
-                            Text('F: ${log.fat.toStringAsFixed(1)}g', style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
-                          ],
-                        ),
-                      ],
+                );
+                if (confirm == true) {
+                  await db.foodLogs.deleteWhere((t) => t.id.equals(log.id));
+                  try {
+                    await syncServiceInstance.deleteFood(log.id);
+                  } catch (_) {}
+                }
+                return confirm;
+              },
+              child: _GlassCard(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainerHigh,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.check_circle, color: AppColors.secondary),
                     ),
-                  ),
-                  Text('${log.grams.toInt()}g', style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
-                ],
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(log.foodName, style: Theme.of(context).textTheme.titleMedium),
+                          const SizedBox(height: 4),
+                          Text(
+                            DateFormat('dd MMM yyyy, HH:mm').format(log.date),
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.onSurfaceVariant),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Text('${log.calories.toInt()} kcal', style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold, fontSize: 12)),
+                              const SizedBox(width: 8),
+                              Text('P: ${log.protein.toStringAsFixed(1)}g', style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
+                              const SizedBox(width: 8),
+                              Text('C: ${log.carbs.toStringAsFixed(1)}g', style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
+                              const SizedBox(width: 8),
+                              Text('F: ${log.fat.toStringAsFixed(1)}g', style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text('${log.grams.toInt()}g', style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
+                  ],
+                ),
               ),
             );
           },

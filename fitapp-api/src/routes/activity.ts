@@ -77,3 +77,17 @@ activityRoutes.get('/:id', async (c) => {
 
   return c.json(activity)
 })
+
+// DELETE /api/activities/:id
+activityRoutes.delete('/:id', async (c) => {
+  const userId = c.get('userId')
+  const id = parseInt(c.req.param('id'))
+
+  if (isNaN(id)) return c.json({ error: 'Invalid ID' }, 400)
+
+  const existing = await prisma.activityLog.findFirst({ where: { id, userId } })
+  if (!existing) return c.json({ error: 'Not found' }, 404)
+
+  await prisma.activityLog.delete({ where: { id } })
+  return c.json({ success: true })
+})

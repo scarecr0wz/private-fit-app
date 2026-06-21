@@ -78,4 +78,34 @@ class SyncService {
       print('❌ [Sync Error] Gagal kirim Activity Log: $e');
     }
   }
+
+  /// 🗑 Delete Food
+  Future<void> deleteFood(int id) async {
+    try {
+      await _dio.delete('/api/food-logs/$id');
+      print('✅ [Sync] Food Log dihapus: $id');
+    } catch (e) {
+      print('❌ [Sync Error] Gagal hapus Food Log: $e');
+    }
+  }
+
+  /// 🗑 Delete Activity
+  Future<void> deleteActivity(int id) async {
+    try {
+      await _dio.delete('/api/activities/$id');
+      print('✅ [Sync] Activity dihapus: $id');
+    } catch (e) {
+      print('❌ [Sync Error] Gagal hapus Activity Log: $e');
+    }
+  }
+
+  /// 🗑 Delete Workout
+  Future<void> deleteWorkout(int id) async {
+    try {
+      await _dio.delete('/api/workout-logs/$id');
+      print('✅ [Sync] Workout dihapus: $id');
+    } catch (e) {
+      print('❌ [Sync Error] Gagal hapus Workout Log: $e');
+    }
+  }
 }
