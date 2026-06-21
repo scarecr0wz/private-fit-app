@@ -6,6 +6,7 @@ import 'router.dart';
 import 'theme.dart';
 
 import 'data/auth_service.dart';
+import 'data/sync_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +24,9 @@ void main() async {
   
   // Eksekusi Silent Login ke VPS (Hono)
   await container.read(authServiceProvider).silentLogin();
+
+  // Restore data dari VPS jika SQLite lokal baru saja diinstal / kosong
+  await container.read(syncServiceProvider).restoreFromVpsIfEmpty();
 
   runApp(UncontrolledProviderScope(
     container: container,
