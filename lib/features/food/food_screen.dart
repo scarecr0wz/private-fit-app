@@ -7,6 +7,7 @@ import '../../theme.dart';
 import '../../data/database.dart';
 import 'food_dummy.dart';
 import 'package:drift/drift.dart' as drift;
+import '../../widgets/profile_avatar.dart';
 
 class FoodScreen extends StatefulWidget {
   const FoodScreen({super.key});
@@ -294,27 +295,7 @@ class _FoodScreenState extends State<FoodScreen> {
           children: [
             Row(
               children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.surfaceContainerHigh,
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.10),
-                      width: 1,
-                    ),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x33000000),
-                        blurRadius: 8,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(Icons.person,
-                      color: AppColors.onSurfaceVariant, size: 20),
-                ),
+                const ProfileAvatar(),
                 const SizedBox(width: 10),
                 Text(
                   'FitFad',
@@ -328,11 +309,6 @@ class _FoodScreenState extends State<FoodScreen> {
                       ),
                 ),
               ],
-            ),
-            IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.notifications_outlined,
-                  color: AppColors.primary),
             ),
           ],
         ),

@@ -7,7 +7,11 @@
 - **Activity Detail**: Added a Pace Profile Chart below the Elevation Profile to visualize pacing dynamics.
 
 ### Changed
+- **UI Consistency**: Standardized the top app bar across Dashboard, Food, Gym, and Stats screens to use a global `ProfileAvatar` component that displays the user's actual profile picture instead of a generic placeholder.
 - **Activity Detail**: Refactored the Weather section into a compact, space-saving text format below the main statistics.
+
+### Removed
+- **Navigation/UI**: Removed the redundant notification (bell) icon from the top app bar across all main screens (Dashboard, Food, Gym, Stats).
 
 ### Fixed
 - **Activity**: Fixed a routing error (`Page Not found`) that occurred when pressing the "DONE" button after recording an activity by directing it to the correct root dashboard route.

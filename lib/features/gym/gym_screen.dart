@@ -3,6 +3,7 @@ import 'package:drift/drift.dart' as drift;
 import '../../data/database.dart';
 import '../../theme.dart';
 import 'gym_dummy.dart' as dummy;
+import '../../widgets/profile_avatar.dart';
 
 class GymScreen extends StatefulWidget {
   const GymScreen({super.key});
@@ -172,27 +173,7 @@ class _GymScreenState extends State<GymScreen> {
         children: [
           Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.surfaceContainerHigh,
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.10),
-                    width: 1,
-                  ),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x33000000),
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Icon(Icons.person,
-                    color: AppColors.onSurfaceVariant, size: 20),
-              ),
+              const ProfileAvatar(),
               const SizedBox(width: 10),
               Text(
                 'FitFad',
@@ -205,10 +186,6 @@ class _GymScreenState extends State<GymScreen> {
                     ),
               ),
             ],
-          ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_outlined, color: AppColors.primary),
           ),
         ],
       ),

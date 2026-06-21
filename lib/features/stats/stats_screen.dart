@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../data/database.dart';
 import '../../theme.dart';
 import '../activity/activity_detail_screen.dart';
+import '../../widgets/profile_avatar.dart';
 
 
 class StatsScreen extends StatefulWidget {
@@ -50,30 +51,7 @@ class _StatsScreenState extends State<StatsScreen> {
                   padding: const EdgeInsets.only(left: 20),
                   child: Row(
                     children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.surfaceContainerHigh,
-                          border: Border.all(
-                            color: AppColors.primary.withValues(alpha: 0.3),
-                            width: 2,
-                          ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x33000000),
-                              blurRadius: 8,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.person,
-                          color: AppColors.onSurfaceVariant,
-                          size: 20,
-                        ),
-                      ),
+                      const ProfileAvatar(),
                       const SizedBox(width: 10),
                       Text(
                         'Stats',
@@ -94,25 +72,6 @@ class _StatsScreenState extends State<StatsScreen> {
                     ],
                   ),
                 ),
-                actions: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    margin: const EdgeInsets.only(right: 20),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.surfaceContainerHigh,
-                      border: Border.all(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.notifications_outlined,
-                      color: AppColors.onSurfaceVariant,
-                      size: 20,
-                    ),
-                  ),
-                ],
               ),
               SliverToBoxAdapter(
                 child: Padding(

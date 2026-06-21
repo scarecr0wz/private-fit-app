@@ -10,6 +10,7 @@ import '../../data/database.dart';
 import '../weather/weather_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../profile/profile_provider.dart';
+import '../../widgets/profile_avatar.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -158,38 +159,7 @@ class DashboardScreen extends ConsumerWidget {
                   child: Row(
                     children: [
                       // Avatar with primary border
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.surfaceContainerHigh,
-                          border: Border.all(
-                            color: AppColors.primary.withValues(alpha: 0.3),
-                            width: 2,
-                          ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x33000000),
-                              blurRadius: 8,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                          image: profile.profileImagePath != null && File(profile.profileImagePath!).existsSync()
-                              ? DecorationImage(
-                                  image: FileImage(File(profile.profileImagePath!)),
-                                  fit: BoxFit.cover,
-                                )
-                              : null,
-                        ),
-                        child: profile.profileImagePath == null || !File(profile.profileImagePath!).existsSync()
-                            ? const Icon(
-                                Icons.person,
-                                color: AppColors.onSurfaceVariant,
-                                size: 20,
-                              )
-                            : null,
-                      ),
+                      const ProfileAvatar(),
                       const SizedBox(width: 10),
                       Text(
                         'FitFad',
@@ -214,6 +184,7 @@ class DashboardScreen extends ConsumerWidget {
                   Container(
                     width: 40,
                     height: 40,
+                    margin: const EdgeInsets.only(right: 20),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
@@ -228,28 +199,6 @@ class DashboardScreen extends ConsumerWidget {
                       },
                       icon: const Icon(
                         Icons.person_outline,
-                        color: AppColors.primary,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    width: 40,
-                    height: 40,
-                    margin: const EdgeInsets.only(right: 20),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.08),
-                        width: 1,
-                      ),
-                    ),
-                    child: IconButton(
-                      padding: EdgeInsets.zero,
-                      onPressed: () {},
-                      icon: const Icon(
-                        Icons.notifications_outlined,
                         color: AppColors.primary,
                         size: 20,
                       ),
