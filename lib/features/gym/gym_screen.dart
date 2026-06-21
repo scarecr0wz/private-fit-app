@@ -176,7 +176,7 @@ class _GymScreenState extends State<GymScreen> {
               const ProfileAvatar(),
               const SizedBox(width: 10),
               Text(
-                'FitFad',
+                'Gym',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w800,

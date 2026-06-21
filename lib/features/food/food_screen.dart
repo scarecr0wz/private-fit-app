@@ -298,7 +298,7 @@ class _FoodScreenState extends State<FoodScreen> {
                 const ProfileAvatar(),
                 const SizedBox(width: 10),
                 Text(
-                  'FitFad',
+                  'Food',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w800,
