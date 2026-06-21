@@ -8,6 +8,8 @@ import '../../data/database.dart';
 import 'activity_icons.dart';
 import 'flyover_3d_screen.dart';
 import '../weather/weather_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'share_activity_screen.dart';
 
 // ─── Data model untuk checkpoint pace ────────────────────────────────────────
 
@@ -124,6 +126,26 @@ class ActivityDetailScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share_rounded, color: AppColors.primary),
+            onPressed: () async {
+              final picker = ImagePicker();
+              final file = await picker.pickImage(source: ImageSource.gallery);
+              if (file != null && context.mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ShareActivityScreen(
+                      activity: activity,
+                      imagePath: file.path,
+                    ),
+                  ),
+                );
+              }
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [

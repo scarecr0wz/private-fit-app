@@ -61,6 +61,8 @@ dependencies:
   maplibre_gl: ^0.26.2
   shared_preferences: ^2.5.5
   image_picker: ^1.2.2
+  screenshot: ^3.0.0
+  share_plus: ^13.1.0
 
 dev_dependencies:
   flutter_test:

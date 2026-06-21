@@ -3,6 +3,7 @@
 ## [1.10.1] - 2026-06-21
 
 ### Added
+- **Activity Detail**: Introduced a "Share to Story" feature. Users can now tap the share icon, pick a photo, and generate a beautiful image overlay containing their route polyline and key statistics to share on social media.
 - **Activity**: Added an Activity Summary pop-up dialog that displays duration, distance, calories, average pace, and elevation gain when the user stops an activity.
 - **Activity Detail**: Added a Pace Profile Chart below the Elevation Profile to visualize pacing dynamics.
 
