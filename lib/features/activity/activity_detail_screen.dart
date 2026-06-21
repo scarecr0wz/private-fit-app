@@ -201,23 +201,44 @@ class ActivityDetailScreen extends StatelessWidget {
                   // Tombol 3D Flyover
                   if (routePoints.isNotEmpty)
                     Positioned(
-                      bottom: 16,
-                      right: 16,
-                      child: FloatingActionButton.extended(
-                        heroTag: 'flyover_btn',
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => Flyover3DScreen(activity: activity),
+                      top: 12,
+                      right: 12,
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => Flyover3DScreen(activity: activity),
+                              ),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.65),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                             ),
-                          );
-                        },
-                        backgroundColor: AppColors.primary,
-                        icon: const Icon(Icons.threed_rotation, color: Colors.white),
-                        label: const Text(
-                          '3D Flyover',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.threed_rotation, color: Colors.white70, size: 16),
+                                SizedBox(width: 6),
+                                Text(
+                                  '3D Route',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),

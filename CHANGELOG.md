@@ -4,6 +4,7 @@
 
 ### Changed
 - **Activity Detail**: Normalized Elevation Profile data to always start at 0m, making the chart show relative elevation changes instead of absolute sea-level altitude. Elevation Gain calculations remain accurate and unaffected.
+- **Activity Detail**: Redesigned the "3D Flyover" button to a minimalist "3D Route" control floating at the top-right of the map, separating it from the Pace legend.
 
 ## [1.9.0] - 2026-06-21
 
