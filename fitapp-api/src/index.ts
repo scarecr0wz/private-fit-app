@@ -1,6 +1,7 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import { logger } from 'hono/logger'
 import { authRoutes } from './routes/auth'
 import { authMiddleware } from './middleware/auth'
 import { foodRoutes } from './routes/food'
@@ -10,7 +11,22 @@ import { dashboardRoutes } from './routes/dashboard'
 
 const app = new Hono()
 
+app.use('*', logger())
 app.use('*', cors())
+
+// Middleware untuk memantau Body (Payload) secara Real-Time
+app.use('*', async (c, next) => {
+  if (c.req.method !== 'GET' && c.req.method !== 'OPTIONS') {
+    try {
+      // Clone request agar tidak bentrok dengan pembacaan body selanjutnya
+      const body = await c.req.raw.clone().json()
+      console.log(`[REALTIME DEBUG] Payload ${c.req.method} ${c.req.path}:`, JSON.stringify(body, null, 2))
+    } catch (e) {
+      // Abaikan jika body bukan JSON
+    }
+  }
+  await next()
+})
 
 // Public routes
 app.route('/api/auth', authRoutes)
