@@ -5,14 +5,43 @@ import 'package:drift/drift.dart' hide Column;
 import '../../theme.dart';
 import '../../shared/widgets/calorie_ring.dart';
 import 'dashboard_dummy.dart';
+import 'dart:io';
 import '../../data/database.dart';
 import '../weather/weather_card.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../profile/profile_provider.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profile = ref.watch(profileProvider);
+
+    // Calculate Calorie Goal (Mifflin-St Jeor)
+    double bmr;
+    if (profile.gender == 'Female') {
+      bmr = (10 * profile.weight) + (6.25 * profile.height) - (5 * profile.age) - 161;
+    } else {
+      bmr = (10 * profile.weight) + (6.25 * profile.height) - (5 * profile.age) + 5;
+    }
+
+    double activityMultiplier = 1.2;
+    switch (profile.activityLevel) {
+      case 'Lightly Active': activityMultiplier = 1.375; break;
+      case 'Moderately Active': activityMultiplier = 1.55; break;
+      case 'Very Active': activityMultiplier = 1.725; break;
+      default: activityMultiplier = 1.2;
+    }
+
+    double tdee = bmr * activityMultiplier;
+    if (profile.mainGoal == 'Lose Weight') {
+      tdee -= 500;
+    } else if (profile.mainGoal == 'Build Muscle') {
+      tdee += 500;
+    }
+    int targetCalories = tdee.round();
+
     final todayStr = DateFormat('EEEE, d MMMM').format(DateTime.now());
     final now = DateTime.now();
     final startOfDay = DateTime(now.year, now.month, now.day);
@@ -90,7 +119,7 @@ class DashboardScreen extends StatelessWidget {
                   final summary = DailySummary(
                     caloriesIn: caloriesIn,
                     caloriesOut: caloriesOut,
-                    calorieGoal: 2000,
+                    calorieGoal: targetCalories,
                     activities: [...activityItems, ...workoutItems],
                     meals: meals,
                   );
@@ -146,12 +175,20 @@ class DashboardScreen extends StatelessWidget {
                               offset: Offset(0, 2),
                             ),
                           ],
+                          image: profile.profileImagePath != null && File(profile.profileImagePath!).existsSync()
+                              ? DecorationImage(
+                                  image: FileImage(File(profile.profileImagePath!)),
+                                  fit: BoxFit.cover,
+                                )
+                              : null,
                         ),
-                        child: const Icon(
-                          Icons.person,
-                          color: AppColors.onSurfaceVariant,
-                          size: 20,
-                        ),
+                        child: profile.profileImagePath == null || !File(profile.profileImagePath!).existsSync()
+                            ? const Icon(
+                                Icons.person,
+                                color: AppColors.onSurfaceVariant,
+                                size: 20,
+                              )
+                            : null,
                       ),
                       const SizedBox(width: 10),
                       Text(
@@ -174,6 +211,29 @@ class DashboardScreen extends StatelessWidget {
                   ),
                 ),
                 actions: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        width: 1,
+                      ),
+                    ),
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      onPressed: () {
+                        GoRouter.of(context).push('/profile');
+                      },
+                      icon: const Icon(
+                        Icons.person_outline,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   Container(
                     width: 40,
                     height: 40,
@@ -205,7 +265,7 @@ class DashboardScreen extends StatelessWidget {
                   delegate: SliverChildListDelegate([
                     // Greeting & Weather Inline
                     WeatherCard(
-                      greeting: _buildGreeting(context, todayStr),
+                      greeting: _buildGreeting(context, todayStr, profile.name),
                     ),
                     const SizedBox(height: 28),
 
@@ -252,12 +312,12 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildGreeting(BuildContext context, String todayStr) {
+  Widget _buildGreeting(BuildContext context, String todayStr, String name) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Hello, User! 👋',
+          'Hello, $name! 👋',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 color: AppColors.onSurface,
                 shadows: const [

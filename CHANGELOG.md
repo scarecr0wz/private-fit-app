@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.10.0] - 2026-06-21
+
+### Added
+- **User Profile**: Created a new dedicated Profile Screen featuring a beautiful glassmorphism design.
+- **User Profile**: Added local storage persistence using `shared_preferences` and Riverpod state management.
+- **User Profile**: Added Profile Picture upload functionality using the `image_picker` package.
+- **Dashboard**: Integrated dynamic Calorie Goal calculation utilizing the Mifflin-St Jeor formula based on the user's Profile data (weight, height, age, gender, activity level, and main goal).
+- **Dashboard**: Added the user's customized name from Profile settings to the greeting ("Hello, [Name]! 👋").
+- **Dashboard**: Moved the Profile navigation button to the top-right app bar alongside the notification icon.
+
+### Removed
+- **User Profile**: Removed "Unit System" setting from the UI to streamline the layout.
+
 ## [1.9.3] - 2026-06-21
 
 ### Added
