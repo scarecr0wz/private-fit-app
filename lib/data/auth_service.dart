@@ -2,53 +2,77 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_client.dart';
+import 'database.dart';
 
-final authServiceProvider = Provider((ref) => AuthService(ref.read(dioProvider)));
+// Menyimpan status login: true = logged in, false = logged out
+final authStateProvider = StateProvider<bool>((ref) => false);
+
+final authServiceProvider = Provider((ref) => AuthService(ref.read(dioProvider), ref));
 
 class AuthService {
   final Dio _dio;
+  final Ref _ref;
 
-  AuthService(this._dio);
+  AuthService(this._dio, this._ref);
 
-  /// Menjalankan silent login (tanpa UI) saat aplikasi dibuka pertama kali
-  Future<void> silentLogin() async {
+  /// Cek apakah user sudah login (punya token)
+  Future<bool> checkAuthStatus() async {
     final prefs = await SharedPreferences.getInstance();
-    final currentToken = prefs.getString('jwt_token');
+    final token = prefs.getString('jwt_token');
+    final isLoggedIn = token != null;
+    _ref.read(authStateProvider.notifier).state = isLoggedIn;
+    return isLoggedIn;
+  }
 
-    // Jika sudah ada token, anggap sudah login
-    if (currentToken != null) return;
-
-    // Hardcoded credentials untuk aplikasi private ini
-    const email = 'user@fitapp.com';
-    const password = 'private_user_secret_123';
-
+  /// Login dengan email dan password
+  Future<void> login(String email, String password) async {
     try {
-      // Coba login
       final response = await _dio.post('/api/auth/login', data: {
         'email': email,
         'password': password,
       });
       final token = response.data['token'];
+      
+      final prefs = await SharedPreferences.getInstance();
       await prefs.setString('jwt_token', token);
-      print("✅ Silent Login Berhasil");
+      
+      _ref.read(authStateProvider.notifier).state = true;
+      print("✅ Login Berhasil");
     } on DioException catch (e) {
-      if (e.response?.statusCode == 400 || e.response?.statusCode == 401) {
-        // Jika gagal karena belum punya akun, otomatis register
-        print("ℹ️ Belum ada akun, mencoba registrasi...");
-        try {
-          final regResponse = await _dio.post('/api/auth/register', data: {
-            'email': email,
-            'password': password,
-          });
-          final token = regResponse.data['token'];
-          await prefs.setString('jwt_token', token);
-          print("✅ Registrasi & Login Berhasil");
-        } catch (regError) {
-          print("❌ Registrasi gagal: $regError");
-        }
-      } else {
-        print("❌ Silent Login gagal: $e");
-      }
+      final message = e.response?.data?['error'] ?? 'Terjadi kesalahan saat login';
+      throw Exception(message);
     }
+  }
+
+  /// Register akun baru
+  Future<void> register(String email, String password) async {
+    try {
+      final response = await _dio.post('/api/auth/register', data: {
+        'email': email,
+        'password': password,
+      });
+      final token = response.data['token'];
+      
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('jwt_token', token);
+      
+      _ref.read(authStateProvider.notifier).state = true;
+      print("✅ Registrasi & Login Berhasil");
+    } on DioException catch (e) {
+      final message = e.response?.data?['error'] ?? 'Terjadi kesalahan saat register';
+      throw Exception(message);
+    }
+  }
+
+  /// Logout: Hapus token dan bersihkan data lokal
+  Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('jwt_token');
+    
+    // Hapus semua data di SQLite untuk alasan privasi
+    await db.clearAllData();
+    
+    _ref.read(authStateProvider.notifier).state = false;
+    print("✅ Logout Berhasil & Database Lokal Dibersihkan");
   }
 }
