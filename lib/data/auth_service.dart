@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_client.dart';
 import 'database.dart';
+import 'sync_service.dart';
 
 // Menyimpan status login: true = logged in, false = logged out
 final authStateProvider = StateProvider<bool>((ref) => false);
@@ -36,8 +37,15 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('jwt_token', token);
       
+      // Bersihkan data lokal sisa user sebelumnya (jika ada)
+      await db.clearAllData();
+      
       _ref.read(authStateProvider.notifier).state = true;
-      print("✅ Login Berhasil");
+      
+      // Langsung sinkronisasikan data user ini dari VPS
+      await _ref.read(syncServiceProvider).restoreFromVpsIfEmpty();
+      
+      print("✅ Login Berhasil & Data Tersinkronisasi");
     } on DioException catch (e) {
       final message = e.response?.data?['error'] ?? 'Terjadi kesalahan saat login';
       throw Exception(message);
@@ -55,6 +63,9 @@ class AuthService {
       
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('jwt_token', token);
+      
+      // Bersihkan data lokal sisa user sebelumnya (jika ada)
+      await db.clearAllData();
       
       _ref.read(authStateProvider.notifier).state = true;
       print("✅ Registrasi & Login Berhasil");
