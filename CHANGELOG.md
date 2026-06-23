@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.0] - 2026-06-23
+
+### Added
+- **Activity Tracking**: Added Text-To-Speech (TTS) voice announcements using `flutter_tts` (English).
+- **Activity Tracking**: Added a 5-second voice countdown before an outdoor activity begins.
+- **Activity Tracking**: Added milestone voice announcements every 1 kilometer, announcing the distance reached, current pace/speed, and total calories burned.
+
 ## [1.11.1] - 2026-06-21
 
 ### Added

@@ -7,6 +7,7 @@ import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import '../weather/weather_service.dart';
 
 enum ActivityState { idle, countdown, running, paused }
@@ -62,6 +63,10 @@ class ActivityService extends ChangeNotifier {
   // Countdown state
   int countdownValue = 5;
 
+  // TTS State
+  final FlutterTts _flutterTts = FlutterTts();
+  int _lastAnnouncedKm = 0;
+
   Timer? _timer;
   Timer? _countdownTimer;
   StreamSubscription<Position>? _positionSub;
@@ -90,8 +95,14 @@ class ActivityService extends ChangeNotifier {
     countdownValue = 5;
     notifyListeners();
 
+    _flutterTts.setLanguage("en-US");
+    _flutterTts.speak(countdownValue.toString());
+
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
       countdownValue--;
+      if (countdownValue > 0) {
+        _flutterTts.speak(countdownValue.toString());
+      }
       notifyListeners();
       if (countdownValue <= 0) {
         t.cancel();
@@ -103,6 +114,7 @@ class ActivityService extends ChangeNotifier {
 
   // ─── Start (dipanggil otomatis setelah countdown selesai) ─────────────────
   Future<void> _startActivity() async {
+    _flutterTts.speak("Activity started");
     state = ActivityState.running;
     if (routePoints.isEmpty) {
       try {
@@ -204,6 +216,26 @@ class ActivityService extends ChangeNotifier {
         calories = activityType == OutdoorActivityType.run
             ? (distanceKm * 60).round()
             : (distanceKm * 30).round();
+
+        final currentKm = distanceKm.floor();
+        if (currentKm > _lastAnnouncedKm) {
+          _lastAnnouncedKm = currentKm;
+          
+          String paceText = "";
+          if (activityType == OutdoorActivityType.run) {
+            final minutes = duration.inSeconds / 60.0;
+            final paceValue = (distanceKm > 0) ? minutes / distanceKm : 0.0;
+            final paceMin = paceValue.floor();
+            final paceSec = ((paceValue - paceMin) * 60).floor();
+            paceText = "Current pace is $paceMin minutes and $paceSec seconds per kilometer.";
+          } else {
+            final hours = duration.inSeconds / 3600.0;
+            final kmh = (hours > 0) ? distanceKm / hours : 0.0;
+            paceText = "Current speed is ${kmh.toStringAsFixed(1)} kilometers per hour.";
+          }
+          
+          _flutterTts.speak("Distance $currentKm kilometers. $paceText Burned $calories calories.");
+        }
 
         final timeDiffSec =
             now.difference(lastData.time).inMilliseconds / 1000.0;
@@ -345,6 +377,7 @@ class ActivityService extends ChangeNotifier {
     _accumulatedDuration = Duration.zero;
     _lastStartTime = null;
     distanceKm = 0.0;
+    _lastAnnouncedKm = 0;
     calories = 0;
     speedDisplay = "0'00\"";
     elevationGain = 0.0;

@@ -64,6 +64,7 @@ dependencies:
   screenshot: ^3.0.0
   share_plus: ^13.1.0
   flutter_screen_recording: ^2.0.25
+  flutter_tts: ^4.2.5
 
 dev_dependencies:
   flutter_test:
