@@ -22,11 +22,13 @@ void main() async {
   // Inisialisasi Riverpod Container
   final container = ProviderContainer();
   
-  // Eksekusi Silent Login ke VPS (Hono)
-  await container.read(authServiceProvider).silentLogin();
+  // Cek apakah user sudah punya token JWT aktif
+  final isLoggedIn = await container.read(authServiceProvider).checkAuthStatus();
 
-  // Restore data dari VPS jika SQLite lokal baru saja diinstal / kosong
-  await container.read(syncServiceProvider).restoreFromVpsIfEmpty();
+  // Jika sudah login, restore data dari VPS (berguna jika SQLite lokal baru saja diinstal / kosong)
+  if (isLoggedIn) {
+    await container.read(syncServiceProvider).restoreFromVpsIfEmpty();
+  }
 
   runApp(UncontrolledProviderScope(
     container: container,
@@ -34,11 +36,11 @@ void main() async {
   ));
 }
 
-class FitFad extends StatelessWidget {
+class FitFad extends ConsumerWidget {
   const FitFad({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final baseTheme = AppTheme.dark;
     final themeWithInter = baseTheme.copyWith(
       textTheme: GoogleFonts.interTextTheme(baseTheme.textTheme),
@@ -48,7 +50,8 @@ class FitFad extends StatelessWidget {
       title: 'FitFad',
       debugShowCheckedModeBanner: false,
       theme: themeWithInter,
-      routerConfig: router,
+      // Gunakan routerProvider dari Riverpod
+      routerConfig: ref.watch(routerProvider),
     );
   }
 }

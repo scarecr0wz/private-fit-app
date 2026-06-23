@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'theme.dart';
 import 'features/dashboard/dashboard_screen.dart';
@@ -9,30 +10,64 @@ import 'features/gym/gym_screen.dart';
 import 'features/stats/stats_screen.dart';
 import 'features/splash/splash_screen.dart';
 import 'features/profile/profile_screen.dart';
+import 'features/auth/login_screen.dart';
+import 'features/auth/register_screen.dart';
+import 'data/auth_service.dart';
 
-final router = GoRouter(
-  initialLocation: '/splash',
-  routes: [
-    GoRoute(
-      path: '/splash',
-      builder: (context, state) => const SplashScreen(),
-    ),
-    GoRoute(
-      path: '/profile',
-      builder: (context, state) => const ProfileScreen(),
-    ),
-    ShellRoute(
-      builder: (context, state, child) => ScaffoldWithNav(child: child),
-      routes: [
-        GoRoute(path: '/', builder: (c, s) => const DashboardScreen()),
-        GoRoute(path: '/food', builder: (c, s) => const FoodScreen()),
-        GoRoute(path: '/activity', builder: (c, s) => const ActivityScreen()),
-        GoRoute(path: '/gym', builder: (c, s) => const GymScreen()),
-        GoRoute(path: '/stats', builder: (c, s) => const StatsScreen()),
-      ],
-    ),
-  ],
-);
+final routerProvider = Provider<GoRouter>((ref) {
+  final isAuth = ref.watch(authStateProvider);
+
+  return GoRouter(
+    initialLocation: '/splash',
+    redirect: (context, state) {
+      final isGoingToLogin = state.uri.path == '/login';
+      final isGoingToRegister = state.uri.path == '/register';
+      final isSplash = state.uri.path == '/splash';
+
+      if (isSplash) return null;
+
+      // Jika tidak login dan mencoba akses halaman selain login/register, lempar ke login
+      if (!isAuth && !isGoingToLogin && !isGoingToRegister) {
+        return '/login';
+      }
+
+      // Jika sudah login dan mencoba akses login/register, lempar ke dashboard
+      if (isAuth && (isGoingToLogin || isGoingToRegister)) {
+        return '/';
+      }
+
+      return null;
+    },
+    routes: [
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/register',
+        builder: (context, state) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: '/profile',
+        builder: (context, state) => const ProfileScreen(),
+      ),
+      ShellRoute(
+        builder: (context, state, child) => ScaffoldWithNav(child: child),
+        routes: [
+          GoRoute(path: '/', builder: (c, s) => const DashboardScreen()),
+          GoRoute(path: '/food', builder: (c, s) => const FoodScreen()),
+          GoRoute(path: '/activity', builder: (c, s) => const ActivityScreen()),
+          GoRoute(path: '/gym', builder: (c, s) => const GymScreen()),
+          GoRoute(path: '/stats', builder: (c, s) => const StatsScreen()),
+        ],
+      ),
+    ],
+  );
+});
 
 class ScaffoldWithNav extends StatelessWidget {
   final Widget child;
