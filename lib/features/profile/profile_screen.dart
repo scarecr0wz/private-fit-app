@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../theme.dart';
 import 'profile_provider.dart';
+import '../../data/auth_service.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -111,7 +112,16 @@ class ProfileScreen extends ConsumerWidget {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          if (profile.email.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              profile.email,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 8),
                           GestureDetector(
                             onTap: () => _editName(context, ref, profile.name),
                             child: Container(
@@ -160,6 +170,29 @@ class ProfileScreen extends ConsumerWidget {
                         _buildDivider(),
                         _buildListTile(context, Icons.directions_run, 'Activity Level', profile.activityLevel, () => _editActivityLevel(context, ref, profile.activityLevel)),
                       ],
+                    ),
+                    const SizedBox(height: 40),
+                    
+                    // Logout Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          await ref.read(authServiceProvider).logout();
+                        },
+                        icon: const Icon(Icons.logout),
+                        label: const Text('Logout', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
+                          foregroundColor: Colors.redAccent,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.5), width: 1),
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 40),
                   ]),

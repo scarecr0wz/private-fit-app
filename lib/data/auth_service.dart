@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'api_client.dart';
 import 'database.dart';
 import 'sync_service.dart';
+import '../features/profile/profile_provider.dart';
 
 // Menyimpan status login: true = logged in, false = logged out
 final authStateProvider = StateProvider<bool>((ref) => false);
@@ -42,6 +43,9 @@ class AuthService {
       
       _ref.read(authStateProvider.notifier).state = true;
       
+      // Sinkronkan email ke profil
+      _ref.read(profileProvider.notifier).updateProfile(email: email);
+      
       // Langsung sinkronisasikan data user ini dari VPS
       await _ref.read(syncServiceProvider).restoreFromVpsIfEmpty();
       
@@ -53,7 +57,7 @@ class AuthService {
   }
 
   /// Register akun baru
-  Future<void> register(String email, String password) async {
+  Future<void> register(String email, String password, String name) async {
     try {
       final response = await _dio.post('/api/auth/register', data: {
         'email': email,
@@ -68,6 +72,10 @@ class AuthService {
       await db.clearAllData();
       
       _ref.read(authStateProvider.notifier).state = true;
+      
+      // Sinkronkan email dan nama ke profil
+      _ref.read(profileProvider.notifier).updateProfile(email: email, name: name);
+      
       print("✅ Registrasi & Login Berhasil");
     } on DioException catch (e) {
       final message = e.response?.data?['error'] ?? 'Terjadi kesalahan saat register';

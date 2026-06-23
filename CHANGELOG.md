@@ -4,10 +4,14 @@
 
 ### Added
 - **Authentication**: Added a full Login and Register UI screen (`LoginScreen`, `RegisterScreen`) featuring a premium dark glassmorphism design.
+- **Authentication**: Added "Full Name" input field during Registration to immediately personalize the user's profile.
+- **User Profile**: Display authenticated user's email underneath their name in the Profile Screen.
+- **User Profile**: Added a prominent "Logout" button at the bottom of the Profile Screen to trigger session cleanup and redirect to login.
 - **State Management**: Added Riverpod `authStateProvider` to manage global authentication state and power the GoRouter redirect logic.
 - **Security**: Added local database wiping (`db.clearAllData()`) on user logout and before login to ensure local SQLite data remains completely isolated per-user.
 
 ### Changed
+- **UI/UX**: Adjusted FitFad app logo formatting in the Login and Register screens to use rounded rectangles (`ClipRRect`) instead of strict circles to prevent layout cutoffs.
 - **Auth System**: Removed the hardcoded `silentLogin` flow. Replaced it with real `/api/auth/login` and `/register` endpoint integrations.
 - **Navigation**: Configured `GoRouter` with an Auth Guard (`redirect` logic) that securely blocks unauthenticated users from accessing protected app routes (Dashboard, Food, Gym, Stats) and redirects them to the Login screen.
 - **Sync System**: Tied the VPS data restore mechanism (`restoreFromVpsIfEmpty`) directly to the successful login event, ensuring users instantly retrieve their exact personal data upon signing in.
