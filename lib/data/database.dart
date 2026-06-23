@@ -77,6 +77,18 @@ class AppDatabase extends _$AppDatabase {
       }
     },
   );
+
+  /// Menghapus seluruh isi tabel secara permanen (Truncate)
+  /// Wajib dipanggil saat proses Logout untuk mencegah kebocoran data privasi.
+  Future<void> clearAllData() async {
+    await transaction(() async {
+      await delete(foodLogs).go();
+      await delete(workoutSets).go(); // Delete children first
+      await delete(workoutLogs).go();
+      await delete(activityLogs).go();
+      await delete(bodyWeights).go();
+    });
+  }
 }
 
 final db = AppDatabase();
