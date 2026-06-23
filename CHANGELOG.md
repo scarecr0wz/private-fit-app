@@ -9,6 +9,7 @@
 - **User Profile**: Added a prominent "Logout" button at the bottom of the Profile Screen to trigger session cleanup and redirect to login.
 - **State Management**: Added Riverpod `authStateProvider` to manage global authentication state and power the GoRouter redirect logic.
 - **Security**: Added local database wiping (`db.clearAllData()`) on user logout and before login to ensure local SQLite data remains completely isolated per-user.
+- **Backend API**: Added extensive debug logging to the `POST /api/auth/register` endpoint to monitor registration flows and added structured Zod validation error parsing.
 
 ### Changed
 - **UI/UX**: Adjusted FitFad app logo formatting in the Login and Register screens to use rounded rectangles (`ClipRRect`) instead of strict circles to prevent layout cutoffs.
