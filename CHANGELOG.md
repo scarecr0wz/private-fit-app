@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.13.0] - 2026-06-23
+
+### Added
+- **Authentication**: Added a full Login and Register UI screen (`LoginScreen`, `RegisterScreen`) featuring a premium dark glassmorphism design.
+- **State Management**: Added Riverpod `authStateProvider` to manage global authentication state and power the GoRouter redirect logic.
+- **Security**: Added local database wiping (`db.clearAllData()`) on user logout and before login to ensure local SQLite data remains completely isolated per-user.
+
+### Changed
+- **Auth System**: Removed the hardcoded `silentLogin` flow. Replaced it with real `/api/auth/login` and `/register` endpoint integrations.
+- **Navigation**: Configured `GoRouter` with an Auth Guard (`redirect` logic) that securely blocks unauthenticated users from accessing protected app routes (Dashboard, Food, Gym, Stats) and redirects them to the Login screen.
+- **Sync System**: Tied the VPS data restore mechanism (`restoreFromVpsIfEmpty`) directly to the successful login event, ensuring users instantly retrieve their exact personal data upon signing in.
 ## [1.12.0] - 2026-06-23
 
 ### Added
