@@ -7,6 +7,9 @@
 - **Gym Feature**: Downloaded open-source exercise JSON dataset (`exercises.json`) containing over 800+ exercises to `assets/`.
 - **Database Seeding**: Created `ExerciseSeeder` logic to automatically parse the JSON dataset and batch-insert it into the `ExerciseDictionary` table upon app initialization.
 - **App Init**: Hooked up `ExerciseSeeder.seedIfEmpty()` inside `main.dart` to ensure the exercise catalog is ready before UI rendering.
+- **Gym UI**: Replaced hardcoded `dummyActiveWorkout` data with dynamic, empty initial state.
+- **Gym UI**: Added a "+ Add Exercise" dashed-border button dynamically injected below active exercises.
+- **Gym UI**: Built `_ExerciseSearchSheet` BottomSheet modal to perform live queries using `LIKE %query%` against the local Drift SQLite `ExerciseDictionary` table for offline exercise selection.
 ## [1.13.0] - 2026-06-23
 
 ### Added

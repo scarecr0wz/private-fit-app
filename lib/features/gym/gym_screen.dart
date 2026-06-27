@@ -28,11 +28,7 @@ class _GymScreenState extends State<GymScreen> {
   void _resetWorkout() {
     _isWorkoutActive = false;
     _startTime = null;
-    _activeExercises = dummy.dummyActiveWorkout.map((e) => dummy.Exercise(
-      id: e.id,
-      name: e.name,
-      sets: [],
-    )).toList();
+    _activeExercises = [];
   }
 
   void _startWorkout() {
@@ -168,6 +164,28 @@ class _GymScreenState extends State<GymScreen> {
                             exercise: e.value,
                             onAddSet: () => _openAddSetSheet(e.key),
                           )),
+                      if (_isWorkoutActive)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16.0),
+                          child: GestureDetector(
+                            onTap: _showAddExerciseSheet,
+                            child: CustomPaint(
+                              painter: _DashedRectPainter(),
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  '+ Add Exercise',
+                                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       const SizedBox(height: 16),
                       if (!_isWorkoutActive) const _MotivationalBento(),
                       if (_isWorkoutActive)
@@ -229,6 +247,24 @@ class _GymScreenState extends State<GymScreen> {
             return _ActiveChip3D(label: template.name);
           }
           return _Chip3D(label: template.name);
+        },
+      ),
+    );
+  }
+  void _showAddExerciseSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _ExerciseSearchSheet(
+        onExerciseSelected: (exData) {
+          setState(() {
+            _activeExercises.add(dummy.Exercise(
+              id: exData.id,
+              name: exData.name,
+              sets: [],
+            ));
+          });
         },
       ),
     );
@@ -831,3 +867,111 @@ class _FinishButton3DState extends State<_FinishButton3D> {
     );
   }
 }
+
+class _ExerciseSearchSheet extends StatefulWidget {
+  final void Function(ExerciseDictionaryData) onExerciseSelected;
+  const _ExerciseSearchSheet({required this.onExerciseSelected});
+
+  @override
+  State<_ExerciseSearchSheet> createState() => _ExerciseSearchSheetState();
+}
+
+class _ExerciseSearchSheetState extends State<_ExerciseSearchSheet> {
+  String _searchQuery = '';
+  List<ExerciseDictionaryData> _results = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExercises();
+  }
+
+  Future<void> _loadExercises() async {
+    setState(() => _isLoading = true);
+    final query = db.select(db.exerciseDictionary);
+    if (_searchQuery.isNotEmpty) {
+      query.where((t) => t.name.like('%$_searchQuery%'));
+    }
+    query.limit(50); // limit for performance
+    
+    final results = await query.get();
+    if (mounted) {
+      setState(() {
+        _results = results;
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          // Grabber
+          Container(
+            margin: const EdgeInsets.only(top: 12, bottom: 20),
+            width: 32,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.outlineVariant,
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Search exercise (e.g. Bench Press)',
+                hintStyle: const TextStyle(color: Colors.white54),
+                prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                filled: true,
+                fillColor: AppColors.surfaceContainerHigh,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+              ),
+              style: const TextStyle(color: AppColors.onSurface),
+              onChanged: (val) {
+                _searchQuery = val;
+                _loadExercises();
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    itemCount: _results.length,
+                    itemBuilder: (context, index) {
+                      final ex = _results[index];
+                      return ListTile(
+                        title: Text(ex.name, style: const TextStyle(color: AppColors.onSurface)),
+                        subtitle: Text(
+                          ex.primaryMuscles.toUpperCase(),
+                          style: TextStyle(color: AppColors.onSurfaceVariant.withValues(alpha: 0.7), fontSize: 12),
+                        ),
+                        trailing: const Icon(Icons.add_circle_outline, color: AppColors.primary),
+                        onTap: () {
+                          widget.onExerciseSelected(ex);
+                          Navigator.pop(context);
+                        },
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
