@@ -10,6 +10,9 @@
 - **Gym UI**: Replaced hardcoded `dummyActiveWorkout` data with dynamic, empty initial state.
 - **Gym UI**: Added a "+ Add Exercise" dashed-border button dynamically injected below active exercises.
 - **Gym UI**: Built `_ExerciseSearchSheet` BottomSheet modal to perform live queries using `LIKE %query%` against the local Drift SQLite `ExerciseDictionary` table for offline exercise selection.
+- **Gym Feature**: Implemented Auto Rest Timer. Completing a set automatically triggers a floating 90-second countdown timer.
+- **Gym UI**: The Rest Timer overlay features glassmorphism styling with quick adjust buttons (-30s, +30s) and a skip button.
+- **Gym Feature**: Added heavy Haptic Feedback when the rest timer reaches 0 to alert the user.
 ## [1.13.0] - 2026-06-23
 
 ### Added
