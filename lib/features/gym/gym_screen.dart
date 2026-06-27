@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:drift/drift.dart' as drift;
@@ -18,11 +19,55 @@ class _GymScreenState extends State<GymScreen> {
   bool _isWorkoutActive = false;
   DateTime? _startTime;
   List<dummy.Exercise> _activeExercises = [];
+  
+  // Timer State
+  int _restSeconds = 0;
+  Timer? _restTimer;
+  int _defaultRestTime = 90;
 
   @override
   void initState() {
     super.initState();
     _resetWorkout();
+  }
+
+  @override
+  void dispose() {
+    _restTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startRestTimer() {
+    _restTimer?.cancel();
+    setState(() {
+      _restSeconds = _defaultRestTime;
+    });
+    _restTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_restSeconds > 0) {
+        setState(() {
+          _restSeconds--;
+        });
+      } else {
+        _stopRestTimer();
+        HapticFeedback.heavyImpact(); // Vibrate when done
+      }
+    });
+  }
+
+  void _stopRestTimer() {
+    _restTimer?.cancel();
+    if (mounted) {
+      setState(() {
+        _restSeconds = 0;
+      });
+    }
+  }
+
+  void _adjustRestTime(int seconds) {
+    setState(() {
+      _restSeconds += seconds;
+      if (_restSeconds < 0) _restSeconds = 0;
+    });
   }
 
   void _resetWorkout() {
@@ -59,6 +104,7 @@ class _GymScreenState extends State<GymScreen> {
               sets: [...ex.sets, newSet],
             );
           });
+          _startRestTimer(); // Mulai timer otomatis
         },
       ),
     );
@@ -226,6 +272,49 @@ class _GymScreenState extends State<GymScreen> {
               ],
             ),
           ),
+          // Floating Rest Timer
+          if (_restSeconds > 0)
+            Positioned(
+              bottom: 80, // Above FAB if it exists
+              left: 20,
+              right: 20,
+              child: _GlassCard(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.timer_outlined, color: AppColors.secondary),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Resting: ${_restSeconds ~/ 60}:${(_restSeconds % 60).toString().padLeft(2, '0')}',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: AppColors.secondary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                      ),
+                      // Adjust buttons
+                      IconButton(
+                        onPressed: () => _adjustRestTime(-30),
+                        icon: const Icon(Icons.remove, color: Colors.white70),
+                        tooltip: '-30s',
+                      ),
+                      IconButton(
+                        onPressed: () => _adjustRestTime(30),
+                        icon: const Icon(Icons.add, color: Colors.white70),
+                        tooltip: '+30s',
+                      ),
+                      IconButton(
+                        onPressed: _stopRestTimer,
+                        icon: const Icon(Icons.close, color: AppColors.error),
+                        tooltip: 'Skip',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
