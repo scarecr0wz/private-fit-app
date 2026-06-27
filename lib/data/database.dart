@@ -52,18 +52,36 @@ class BodyWeights extends Table {
   RealColumn get weightKg => real()();
 }
 
+class ExerciseDictionary extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get force => text().nullable()();
+  TextColumn get level => text().nullable()();
+  TextColumn get mechanic => text().nullable()();
+  TextColumn get equipment => text().nullable()();
+  TextColumn get primaryMuscles => text()(); // comma separated
+  TextColumn get secondaryMuscles => text()(); // comma separated
+  TextColumn get instructions => text()(); // newline separated
+  TextColumn get category => text()();
+  TextColumn get images => text()(); // comma separated
+  
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 @DriftDatabase(tables: [
   FoodLogs,
   WorkoutLogs,
   WorkoutSets,
   ActivityLogs,
   BodyWeights,
+  ExerciseDictionary,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(connection.connect());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -74,6 +92,10 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(activityLogs, activityLogs.weatherHumidity);
         await m.addColumn(activityLogs, activityLogs.weatherWindKmh);
         await m.addColumn(activityLogs, activityLogs.weatherCode);
+      }
+      if (from < 3) {
+        // v2 → v3: add exercise_dictionary table
+        await m.createTable(exerciseDictionary);
       }
     },
   );

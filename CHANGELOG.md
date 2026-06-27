@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.0] - 2026-06-27
+
+### Added
+- **Database**: Added `ExerciseDictionary` table to Drift SQLite database to store an offline catalog of exercises.
+- **Gym Feature**: Downloaded open-source exercise JSON dataset (`exercises.json`) containing over 800+ exercises to `assets/`.
+- **Database Seeding**: Created `ExerciseSeeder` logic to automatically parse the JSON dataset and batch-insert it into the `ExerciseDictionary` table upon app initialization.
+- **App Init**: Hooked up `ExerciseSeeder.seedIfEmpty()` inside `main.dart` to ensure the exercise catalog is ready before UI rendering.
 ## [1.13.0] - 2026-06-23
 
 ### Added

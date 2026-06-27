@@ -2210,6 +2210,675 @@ class BodyWeightsCompanion extends UpdateCompanion<BodyWeight> {
   }
 }
 
+class $ExerciseDictionaryTable extends ExerciseDictionary
+    with TableInfo<$ExerciseDictionaryTable, ExerciseDictionaryData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ExerciseDictionaryTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _forceMeta = const VerificationMeta('force');
+  @override
+  late final GeneratedColumn<String> force = GeneratedColumn<String>(
+    'force',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _levelMeta = const VerificationMeta('level');
+  @override
+  late final GeneratedColumn<String> level = GeneratedColumn<String>(
+    'level',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _mechanicMeta = const VerificationMeta(
+    'mechanic',
+  );
+  @override
+  late final GeneratedColumn<String> mechanic = GeneratedColumn<String>(
+    'mechanic',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _equipmentMeta = const VerificationMeta(
+    'equipment',
+  );
+  @override
+  late final GeneratedColumn<String> equipment = GeneratedColumn<String>(
+    'equipment',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _primaryMusclesMeta = const VerificationMeta(
+    'primaryMuscles',
+  );
+  @override
+  late final GeneratedColumn<String> primaryMuscles = GeneratedColumn<String>(
+    'primary_muscles',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _secondaryMusclesMeta = const VerificationMeta(
+    'secondaryMuscles',
+  );
+  @override
+  late final GeneratedColumn<String> secondaryMuscles = GeneratedColumn<String>(
+    'secondary_muscles',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _instructionsMeta = const VerificationMeta(
+    'instructions',
+  );
+  @override
+  late final GeneratedColumn<String> instructions = GeneratedColumn<String>(
+    'instructions',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _categoryMeta = const VerificationMeta(
+    'category',
+  );
+  @override
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
+    'category',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _imagesMeta = const VerificationMeta('images');
+  @override
+  late final GeneratedColumn<String> images = GeneratedColumn<String>(
+    'images',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    force,
+    level,
+    mechanic,
+    equipment,
+    primaryMuscles,
+    secondaryMuscles,
+    instructions,
+    category,
+    images,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'exercise_dictionary';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ExerciseDictionaryData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('force')) {
+      context.handle(
+        _forceMeta,
+        force.isAcceptableOrUnknown(data['force']!, _forceMeta),
+      );
+    }
+    if (data.containsKey('level')) {
+      context.handle(
+        _levelMeta,
+        level.isAcceptableOrUnknown(data['level']!, _levelMeta),
+      );
+    }
+    if (data.containsKey('mechanic')) {
+      context.handle(
+        _mechanicMeta,
+        mechanic.isAcceptableOrUnknown(data['mechanic']!, _mechanicMeta),
+      );
+    }
+    if (data.containsKey('equipment')) {
+      context.handle(
+        _equipmentMeta,
+        equipment.isAcceptableOrUnknown(data['equipment']!, _equipmentMeta),
+      );
+    }
+    if (data.containsKey('primary_muscles')) {
+      context.handle(
+        _primaryMusclesMeta,
+        primaryMuscles.isAcceptableOrUnknown(
+          data['primary_muscles']!,
+          _primaryMusclesMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_primaryMusclesMeta);
+    }
+    if (data.containsKey('secondary_muscles')) {
+      context.handle(
+        _secondaryMusclesMeta,
+        secondaryMuscles.isAcceptableOrUnknown(
+          data['secondary_muscles']!,
+          _secondaryMusclesMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_secondaryMusclesMeta);
+    }
+    if (data.containsKey('instructions')) {
+      context.handle(
+        _instructionsMeta,
+        instructions.isAcceptableOrUnknown(
+          data['instructions']!,
+          _instructionsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_instructionsMeta);
+    }
+    if (data.containsKey('category')) {
+      context.handle(
+        _categoryMeta,
+        category.isAcceptableOrUnknown(data['category']!, _categoryMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_categoryMeta);
+    }
+    if (data.containsKey('images')) {
+      context.handle(
+        _imagesMeta,
+        images.isAcceptableOrUnknown(data['images']!, _imagesMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_imagesMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ExerciseDictionaryData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ExerciseDictionaryData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      force: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}force'],
+      ),
+      level: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}level'],
+      ),
+      mechanic: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mechanic'],
+      ),
+      equipment: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}equipment'],
+      ),
+      primaryMuscles: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}primary_muscles'],
+      )!,
+      secondaryMuscles: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}secondary_muscles'],
+      )!,
+      instructions: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}instructions'],
+      )!,
+      category: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category'],
+      )!,
+      images: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}images'],
+      )!,
+    );
+  }
+
+  @override
+  $ExerciseDictionaryTable createAlias(String alias) {
+    return $ExerciseDictionaryTable(attachedDatabase, alias);
+  }
+}
+
+class ExerciseDictionaryData extends DataClass
+    implements Insertable<ExerciseDictionaryData> {
+  final String id;
+  final String name;
+  final String? force;
+  final String? level;
+  final String? mechanic;
+  final String? equipment;
+  final String primaryMuscles;
+  final String secondaryMuscles;
+  final String instructions;
+  final String category;
+  final String images;
+  const ExerciseDictionaryData({
+    required this.id,
+    required this.name,
+    this.force,
+    this.level,
+    this.mechanic,
+    this.equipment,
+    required this.primaryMuscles,
+    required this.secondaryMuscles,
+    required this.instructions,
+    required this.category,
+    required this.images,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || force != null) {
+      map['force'] = Variable<String>(force);
+    }
+    if (!nullToAbsent || level != null) {
+      map['level'] = Variable<String>(level);
+    }
+    if (!nullToAbsent || mechanic != null) {
+      map['mechanic'] = Variable<String>(mechanic);
+    }
+    if (!nullToAbsent || equipment != null) {
+      map['equipment'] = Variable<String>(equipment);
+    }
+    map['primary_muscles'] = Variable<String>(primaryMuscles);
+    map['secondary_muscles'] = Variable<String>(secondaryMuscles);
+    map['instructions'] = Variable<String>(instructions);
+    map['category'] = Variable<String>(category);
+    map['images'] = Variable<String>(images);
+    return map;
+  }
+
+  ExerciseDictionaryCompanion toCompanion(bool nullToAbsent) {
+    return ExerciseDictionaryCompanion(
+      id: Value(id),
+      name: Value(name),
+      force: force == null && nullToAbsent
+          ? const Value.absent()
+          : Value(force),
+      level: level == null && nullToAbsent
+          ? const Value.absent()
+          : Value(level),
+      mechanic: mechanic == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mechanic),
+      equipment: equipment == null && nullToAbsent
+          ? const Value.absent()
+          : Value(equipment),
+      primaryMuscles: Value(primaryMuscles),
+      secondaryMuscles: Value(secondaryMuscles),
+      instructions: Value(instructions),
+      category: Value(category),
+      images: Value(images),
+    );
+  }
+
+  factory ExerciseDictionaryData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ExerciseDictionaryData(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      force: serializer.fromJson<String?>(json['force']),
+      level: serializer.fromJson<String?>(json['level']),
+      mechanic: serializer.fromJson<String?>(json['mechanic']),
+      equipment: serializer.fromJson<String?>(json['equipment']),
+      primaryMuscles: serializer.fromJson<String>(json['primaryMuscles']),
+      secondaryMuscles: serializer.fromJson<String>(json['secondaryMuscles']),
+      instructions: serializer.fromJson<String>(json['instructions']),
+      category: serializer.fromJson<String>(json['category']),
+      images: serializer.fromJson<String>(json['images']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'force': serializer.toJson<String?>(force),
+      'level': serializer.toJson<String?>(level),
+      'mechanic': serializer.toJson<String?>(mechanic),
+      'equipment': serializer.toJson<String?>(equipment),
+      'primaryMuscles': serializer.toJson<String>(primaryMuscles),
+      'secondaryMuscles': serializer.toJson<String>(secondaryMuscles),
+      'instructions': serializer.toJson<String>(instructions),
+      'category': serializer.toJson<String>(category),
+      'images': serializer.toJson<String>(images),
+    };
+  }
+
+  ExerciseDictionaryData copyWith({
+    String? id,
+    String? name,
+    Value<String?> force = const Value.absent(),
+    Value<String?> level = const Value.absent(),
+    Value<String?> mechanic = const Value.absent(),
+    Value<String?> equipment = const Value.absent(),
+    String? primaryMuscles,
+    String? secondaryMuscles,
+    String? instructions,
+    String? category,
+    String? images,
+  }) => ExerciseDictionaryData(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    force: force.present ? force.value : this.force,
+    level: level.present ? level.value : this.level,
+    mechanic: mechanic.present ? mechanic.value : this.mechanic,
+    equipment: equipment.present ? equipment.value : this.equipment,
+    primaryMuscles: primaryMuscles ?? this.primaryMuscles,
+    secondaryMuscles: secondaryMuscles ?? this.secondaryMuscles,
+    instructions: instructions ?? this.instructions,
+    category: category ?? this.category,
+    images: images ?? this.images,
+  );
+  ExerciseDictionaryData copyWithCompanion(ExerciseDictionaryCompanion data) {
+    return ExerciseDictionaryData(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      force: data.force.present ? data.force.value : this.force,
+      level: data.level.present ? data.level.value : this.level,
+      mechanic: data.mechanic.present ? data.mechanic.value : this.mechanic,
+      equipment: data.equipment.present ? data.equipment.value : this.equipment,
+      primaryMuscles: data.primaryMuscles.present
+          ? data.primaryMuscles.value
+          : this.primaryMuscles,
+      secondaryMuscles: data.secondaryMuscles.present
+          ? data.secondaryMuscles.value
+          : this.secondaryMuscles,
+      instructions: data.instructions.present
+          ? data.instructions.value
+          : this.instructions,
+      category: data.category.present ? data.category.value : this.category,
+      images: data.images.present ? data.images.value : this.images,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExerciseDictionaryData(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('force: $force, ')
+          ..write('level: $level, ')
+          ..write('mechanic: $mechanic, ')
+          ..write('equipment: $equipment, ')
+          ..write('primaryMuscles: $primaryMuscles, ')
+          ..write('secondaryMuscles: $secondaryMuscles, ')
+          ..write('instructions: $instructions, ')
+          ..write('category: $category, ')
+          ..write('images: $images')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    force,
+    level,
+    mechanic,
+    equipment,
+    primaryMuscles,
+    secondaryMuscles,
+    instructions,
+    category,
+    images,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ExerciseDictionaryData &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.force == this.force &&
+          other.level == this.level &&
+          other.mechanic == this.mechanic &&
+          other.equipment == this.equipment &&
+          other.primaryMuscles == this.primaryMuscles &&
+          other.secondaryMuscles == this.secondaryMuscles &&
+          other.instructions == this.instructions &&
+          other.category == this.category &&
+          other.images == this.images);
+}
+
+class ExerciseDictionaryCompanion
+    extends UpdateCompanion<ExerciseDictionaryData> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String?> force;
+  final Value<String?> level;
+  final Value<String?> mechanic;
+  final Value<String?> equipment;
+  final Value<String> primaryMuscles;
+  final Value<String> secondaryMuscles;
+  final Value<String> instructions;
+  final Value<String> category;
+  final Value<String> images;
+  final Value<int> rowid;
+  const ExerciseDictionaryCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.force = const Value.absent(),
+    this.level = const Value.absent(),
+    this.mechanic = const Value.absent(),
+    this.equipment = const Value.absent(),
+    this.primaryMuscles = const Value.absent(),
+    this.secondaryMuscles = const Value.absent(),
+    this.instructions = const Value.absent(),
+    this.category = const Value.absent(),
+    this.images = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ExerciseDictionaryCompanion.insert({
+    required String id,
+    required String name,
+    this.force = const Value.absent(),
+    this.level = const Value.absent(),
+    this.mechanic = const Value.absent(),
+    this.equipment = const Value.absent(),
+    required String primaryMuscles,
+    required String secondaryMuscles,
+    required String instructions,
+    required String category,
+    required String images,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       primaryMuscles = Value(primaryMuscles),
+       secondaryMuscles = Value(secondaryMuscles),
+       instructions = Value(instructions),
+       category = Value(category),
+       images = Value(images);
+  static Insertable<ExerciseDictionaryData> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? force,
+    Expression<String>? level,
+    Expression<String>? mechanic,
+    Expression<String>? equipment,
+    Expression<String>? primaryMuscles,
+    Expression<String>? secondaryMuscles,
+    Expression<String>? instructions,
+    Expression<String>? category,
+    Expression<String>? images,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (force != null) 'force': force,
+      if (level != null) 'level': level,
+      if (mechanic != null) 'mechanic': mechanic,
+      if (equipment != null) 'equipment': equipment,
+      if (primaryMuscles != null) 'primary_muscles': primaryMuscles,
+      if (secondaryMuscles != null) 'secondary_muscles': secondaryMuscles,
+      if (instructions != null) 'instructions': instructions,
+      if (category != null) 'category': category,
+      if (images != null) 'images': images,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ExerciseDictionaryCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String?>? force,
+    Value<String?>? level,
+    Value<String?>? mechanic,
+    Value<String?>? equipment,
+    Value<String>? primaryMuscles,
+    Value<String>? secondaryMuscles,
+    Value<String>? instructions,
+    Value<String>? category,
+    Value<String>? images,
+    Value<int>? rowid,
+  }) {
+    return ExerciseDictionaryCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      force: force ?? this.force,
+      level: level ?? this.level,
+      mechanic: mechanic ?? this.mechanic,
+      equipment: equipment ?? this.equipment,
+      primaryMuscles: primaryMuscles ?? this.primaryMuscles,
+      secondaryMuscles: secondaryMuscles ?? this.secondaryMuscles,
+      instructions: instructions ?? this.instructions,
+      category: category ?? this.category,
+      images: images ?? this.images,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (force.present) {
+      map['force'] = Variable<String>(force.value);
+    }
+    if (level.present) {
+      map['level'] = Variable<String>(level.value);
+    }
+    if (mechanic.present) {
+      map['mechanic'] = Variable<String>(mechanic.value);
+    }
+    if (equipment.present) {
+      map['equipment'] = Variable<String>(equipment.value);
+    }
+    if (primaryMuscles.present) {
+      map['primary_muscles'] = Variable<String>(primaryMuscles.value);
+    }
+    if (secondaryMuscles.present) {
+      map['secondary_muscles'] = Variable<String>(secondaryMuscles.value);
+    }
+    if (instructions.present) {
+      map['instructions'] = Variable<String>(instructions.value);
+    }
+    if (category.present) {
+      map['category'] = Variable<String>(category.value);
+    }
+    if (images.present) {
+      map['images'] = Variable<String>(images.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExerciseDictionaryCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('force: $force, ')
+          ..write('level: $level, ')
+          ..write('mechanic: $mechanic, ')
+          ..write('equipment: $equipment, ')
+          ..write('primaryMuscles: $primaryMuscles, ')
+          ..write('secondaryMuscles: $secondaryMuscles, ')
+          ..write('instructions: $instructions, ')
+          ..write('category: $category, ')
+          ..write('images: $images, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2218,6 +2887,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $WorkoutSetsTable workoutSets = $WorkoutSetsTable(this);
   late final $ActivityLogsTable activityLogs = $ActivityLogsTable(this);
   late final $BodyWeightsTable bodyWeights = $BodyWeightsTable(this);
+  late final $ExerciseDictionaryTable exerciseDictionary =
+      $ExerciseDictionaryTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2228,6 +2899,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     workoutSets,
     activityLogs,
     bodyWeights,
+    exerciseDictionary,
   ];
 }
 
@@ -3372,6 +4044,339 @@ typedef $$BodyWeightsTableProcessedTableManager =
       BodyWeight,
       PrefetchHooks Function()
     >;
+typedef $$ExerciseDictionaryTableCreateCompanionBuilder =
+    ExerciseDictionaryCompanion Function({
+      required String id,
+      required String name,
+      Value<String?> force,
+      Value<String?> level,
+      Value<String?> mechanic,
+      Value<String?> equipment,
+      required String primaryMuscles,
+      required String secondaryMuscles,
+      required String instructions,
+      required String category,
+      required String images,
+      Value<int> rowid,
+    });
+typedef $$ExerciseDictionaryTableUpdateCompanionBuilder =
+    ExerciseDictionaryCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String?> force,
+      Value<String?> level,
+      Value<String?> mechanic,
+      Value<String?> equipment,
+      Value<String> primaryMuscles,
+      Value<String> secondaryMuscles,
+      Value<String> instructions,
+      Value<String> category,
+      Value<String> images,
+      Value<int> rowid,
+    });
+
+class $$ExerciseDictionaryTableFilterComposer
+    extends Composer<_$AppDatabase, $ExerciseDictionaryTable> {
+  $$ExerciseDictionaryTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get force => $composableBuilder(
+    column: $table.force,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get level => $composableBuilder(
+    column: $table.level,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mechanic => $composableBuilder(
+    column: $table.mechanic,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get equipment => $composableBuilder(
+    column: $table.equipment,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get primaryMuscles => $composableBuilder(
+    column: $table.primaryMuscles,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get secondaryMuscles => $composableBuilder(
+    column: $table.secondaryMuscles,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get instructions => $composableBuilder(
+    column: $table.instructions,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get images => $composableBuilder(
+    column: $table.images,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ExerciseDictionaryTableOrderingComposer
+    extends Composer<_$AppDatabase, $ExerciseDictionaryTable> {
+  $$ExerciseDictionaryTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get force => $composableBuilder(
+    column: $table.force,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get level => $composableBuilder(
+    column: $table.level,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mechanic => $composableBuilder(
+    column: $table.mechanic,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get equipment => $composableBuilder(
+    column: $table.equipment,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get primaryMuscles => $composableBuilder(
+    column: $table.primaryMuscles,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get secondaryMuscles => $composableBuilder(
+    column: $table.secondaryMuscles,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get instructions => $composableBuilder(
+    column: $table.instructions,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get images => $composableBuilder(
+    column: $table.images,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ExerciseDictionaryTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ExerciseDictionaryTable> {
+  $$ExerciseDictionaryTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get force =>
+      $composableBuilder(column: $table.force, builder: (column) => column);
+
+  GeneratedColumn<String> get level =>
+      $composableBuilder(column: $table.level, builder: (column) => column);
+
+  GeneratedColumn<String> get mechanic =>
+      $composableBuilder(column: $table.mechanic, builder: (column) => column);
+
+  GeneratedColumn<String> get equipment =>
+      $composableBuilder(column: $table.equipment, builder: (column) => column);
+
+  GeneratedColumn<String> get primaryMuscles => $composableBuilder(
+    column: $table.primaryMuscles,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get secondaryMuscles => $composableBuilder(
+    column: $table.secondaryMuscles,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get instructions => $composableBuilder(
+    column: $table.instructions,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<String> get images =>
+      $composableBuilder(column: $table.images, builder: (column) => column);
+}
+
+class $$ExerciseDictionaryTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ExerciseDictionaryTable,
+          ExerciseDictionaryData,
+          $$ExerciseDictionaryTableFilterComposer,
+          $$ExerciseDictionaryTableOrderingComposer,
+          $$ExerciseDictionaryTableAnnotationComposer,
+          $$ExerciseDictionaryTableCreateCompanionBuilder,
+          $$ExerciseDictionaryTableUpdateCompanionBuilder,
+          (
+            ExerciseDictionaryData,
+            BaseReferences<
+              _$AppDatabase,
+              $ExerciseDictionaryTable,
+              ExerciseDictionaryData
+            >,
+          ),
+          ExerciseDictionaryData,
+          PrefetchHooks Function()
+        > {
+  $$ExerciseDictionaryTableTableManager(
+    _$AppDatabase db,
+    $ExerciseDictionaryTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ExerciseDictionaryTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ExerciseDictionaryTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ExerciseDictionaryTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> force = const Value.absent(),
+                Value<String?> level = const Value.absent(),
+                Value<String?> mechanic = const Value.absent(),
+                Value<String?> equipment = const Value.absent(),
+                Value<String> primaryMuscles = const Value.absent(),
+                Value<String> secondaryMuscles = const Value.absent(),
+                Value<String> instructions = const Value.absent(),
+                Value<String> category = const Value.absent(),
+                Value<String> images = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ExerciseDictionaryCompanion(
+                id: id,
+                name: name,
+                force: force,
+                level: level,
+                mechanic: mechanic,
+                equipment: equipment,
+                primaryMuscles: primaryMuscles,
+                secondaryMuscles: secondaryMuscles,
+                instructions: instructions,
+                category: category,
+                images: images,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                Value<String?> force = const Value.absent(),
+                Value<String?> level = const Value.absent(),
+                Value<String?> mechanic = const Value.absent(),
+                Value<String?> equipment = const Value.absent(),
+                required String primaryMuscles,
+                required String secondaryMuscles,
+                required String instructions,
+                required String category,
+                required String images,
+                Value<int> rowid = const Value.absent(),
+              }) => ExerciseDictionaryCompanion.insert(
+                id: id,
+                name: name,
+                force: force,
+                level: level,
+                mechanic: mechanic,
+                equipment: equipment,
+                primaryMuscles: primaryMuscles,
+                secondaryMuscles: secondaryMuscles,
+                instructions: instructions,
+                category: category,
+                images: images,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ExerciseDictionaryTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ExerciseDictionaryTable,
+      ExerciseDictionaryData,
+      $$ExerciseDictionaryTableFilterComposer,
+      $$ExerciseDictionaryTableOrderingComposer,
+      $$ExerciseDictionaryTableAnnotationComposer,
+      $$ExerciseDictionaryTableCreateCompanionBuilder,
+      $$ExerciseDictionaryTableUpdateCompanionBuilder,
+      (
+        ExerciseDictionaryData,
+        BaseReferences<
+          _$AppDatabase,
+          $ExerciseDictionaryTable,
+          ExerciseDictionaryData
+        >,
+      ),
+      ExerciseDictionaryData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3386,4 +4391,6 @@ class $AppDatabaseManager {
       $$ActivityLogsTableTableManager(_db, _db.activityLogs);
   $$BodyWeightsTableTableManager get bodyWeights =>
       $$BodyWeightsTableTableManager(_db, _db.bodyWeights);
+  $$ExerciseDictionaryTableTableManager get exerciseDictionary =>
+      $$ExerciseDictionaryTableTableManager(_db, _db.exerciseDictionary);
 }

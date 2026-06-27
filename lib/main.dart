@@ -7,6 +7,7 @@ import 'theme.dart';
 
 import 'data/auth_service.dart';
 import 'data/sync_service.dart';
+import 'data/exercise_seeder.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +19,9 @@ void main() async {
       statusBarIconBrightness: Brightness.light,
     ),
   );
+
+  // Seed static exercise data from JSON (fast, one-time operation)
+  await ExerciseSeeder.seedIfEmpty();
 
   // Inisialisasi Riverpod Container
   final container = ProviderContainer();
