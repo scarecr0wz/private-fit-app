@@ -68,6 +68,9 @@ class _GymScreenState extends State<GymScreen> {
     if (_startTime == null) return;
     
     int durationMinutes = DateTime.now().difference(_startTime!).inMinutes;
+    // Fallback if they finish too quickly in testing
+    if (durationMinutes < 1) durationMinutes = 1;
+
     double totalVolume = 0;
     List<WorkoutSetsCompanion> setsToInsert = [];
     
@@ -85,14 +88,37 @@ class _GymScreenState extends State<GymScreen> {
     
     await db.transaction(() async {
       final now = DateTime.now();
+
+      // 1. Fetch user's latest body weight for calorie calculation
+      final latestWeightLog = await (db.select(db.bodyWeights)
+            ..orderBy([(t) => drift.OrderingTerm(expression: t.date, mode: drift.OrderingMode.desc)])
+            ..limit(1))
+          .getSingleOrNull();
+      
+      final bodyWeightKg = latestWeightLog?.weightKg ?? 70.0; // Default to 70kg
+
+      // 2. Calculate Calories Burned
+      // Standard Weightlifting MET is around 5.0
+      // Formula: (MET * BodyWeight(kg) * Duration(hours))
+      final durationHours = durationMinutes / 60.0;
+      final baseCalories = 5.0 * bodyWeightKg * durationHours;
+
+      // Add a small "Volume Bonus" so lifting heavier = slightly more calories
+      // e.g. 1000kg volume adds ~5 calories
+      final volumeBonusCalories = totalVolume * 0.005; 
+      
+      final totalCaloriesBurned = baseCalories + volumeBonusCalories;
+
+      // 3. Save Workout Log
       final logId = await db.into(db.workoutLogs).insert(WorkoutLogsCompanion.insert(
         date: now,
-        templateName: 'Push Day',
+        templateName: _activeExercises.isNotEmpty ? 'Custom Workout' : 'Empty Workout',
         durationMinutes: durationMinutes,
         totalVolumeKg: totalVolume,
-        caloriesBurned: drift.Value(durationMinutes * 5.0),
+        caloriesBurned: drift.Value(totalCaloriesBurned),
       ));
       
+      // 4. Save Sets
       final savedSets = <WorkoutSet>[];
       for (var s in setsToInsert) {
         final setId = await db.into(db.workoutSets).insert(s.copyWith(workoutLogId: drift.Value(logId)));
@@ -109,10 +135,10 @@ class _GymScreenState extends State<GymScreen> {
       final workoutLog = WorkoutLog(
         id: logId,
         date: now,
-        templateName: 'Push Day',
+        templateName: _activeExercises.isNotEmpty ? 'Custom Workout' : 'Empty Workout',
         durationMinutes: durationMinutes,
         totalVolumeKg: totalVolume,
-        caloriesBurned: durationMinutes * 5.0,
+        caloriesBurned: totalCaloriesBurned,
       );
       syncServiceInstance.syncWorkout(workoutLog, savedSets);
     });
