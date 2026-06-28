@@ -4,6 +4,13 @@
 
 ### Changed
 - **UI/UX**: Removed the debug sync log snackbar notification that appeared on the Dashboard screen immediately after login to improve user experience.
+- **Gym Feature**: Overhauled the Gym screen to match the Outdoor Activity design language. Replaced monolithic state with `GymService` singleton.
+- **Gym UI**: Added a 5-second TTS voice countdown overlay when starting a gym workout, identical to the Outdoor Activity flow.
+- **Gym UI**: Prominently display a live stopwatch timer at the top of the active workout screen.
+- **Gym UI**: Simplified the "Add Set" flow. Sets are now added as inline rows on the exercise card with direct weight and reps text inputs.
+- **Gym Feature**: Checking off a set now automatically triggers a full-screen Rest Timer overlay with glassmorphism design, skip button, and quick adjust buttons (-30s/+30s).
+- **Gym Feature**: Added a workout summary dialog after finishing a gym session, displaying total duration, volume, exercises, sets, and calories burned.
+- **Gym UI**: The main Gym screen now displays a chronological list of past workout sessions when idle, complete with a detailed bottom sheet view for each session.
 
 ## [1.14.0] - 2026-06-27
 
