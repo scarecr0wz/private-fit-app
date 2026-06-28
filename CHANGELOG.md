@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+- **UI/UX**: Removed the debug sync log snackbar notification that appeared on the Dashboard screen immediately after login to improve user experience.
+
 ## [1.14.0] - 2026-06-27
 
 ### Added

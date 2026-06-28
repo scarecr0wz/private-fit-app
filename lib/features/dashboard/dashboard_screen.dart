@@ -18,19 +18,8 @@ class DashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (syncServiceInstance.latestSyncLog.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(syncServiceInstance.latestSyncLog),
-            backgroundColor: syncServiceInstance.latestSyncLog.contains('Gagal') ? AppColors.errorContainer : AppColors.surfaceVariant,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 8),
-          )
-        );
-        syncServiceInstance.latestSyncLog = ''; // Clear it so it only shows once
-      }
-    });
+    // Sync log notification removed as per request
+
 
     final profile = ref.watch(profileProvider);
 
