@@ -7,6 +7,11 @@
 - **Gym Feature**: Created `MuscleActivationService` singleton that cross-references workout sets against the local `ExerciseDictionary` to compute which muscles were activated, at what intensity (none/low/moderate/high), and whether primary or secondary target.
 - **Gym Feature**: Supports per-session heatmap, 7-day weekly aggregation, and custom date range queries for muscle activation data.
 - **Documentation**: Added implementation plan (`docs/muscle_heatmap_plan.md`) for the muscle heatmap body map feature.
+- **Gym UI**: Built `MuscleHeatmapWidget` using `flutter_body_part_selector` package to render interactive SVG body map with front/back views and color-coded muscle intensity highlighting.
+- **Gym UI**: Muscle heatmap now displayed in the Workout Summary dialog after finishing a gym session, showing which muscle groups were targeted.
+- **Gym UI**: Muscle heatmap now displayed in the Session History detail bottom sheet for each past workout session.
+- **Dashboard**: Added a "Weekly Muscle Heatmap" card showing aggregated muscle activation from the last 7 days of gym workouts.
+- **Dependencies**: Added `flutter_body_part_selector: ^1.2.1` for SVG body diagram rendering.
 
 ### Changed
 - **UI/UX**: Removed the debug sync log snackbar notification that appeared on the Dashboard screen immediately after login to improve user experience.
