@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:drift/drift.dart' as drift;
 import '../../data/database.dart';
+import '../../data/muscle_activation_service.dart';
 import '../../theme.dart';
+import '../../widgets/muscle_heatmap_widget.dart';
 import '../../widgets/profile_avatar.dart';
 import 'gym_service.dart';
 
@@ -557,7 +559,24 @@ class _GymScreenState extends State<GymScreen> with TickerProviderStateMixin {
     }
   }
 
-  void _showWorkoutSummary(WorkoutSummaryData summary) {
+  void _showWorkoutSummary(WorkoutSummaryData summary) async {
+    // Build synthetic WorkoutSets from the summary exercises to compute muscle activation
+    final syntheticSets = <WorkoutSet>[];
+    int fakeId = 0;
+    for (final ex in summary.exercises) {
+      for (final s in ex.sets.where((s) => s.completed)) {
+        syntheticSets.add(WorkoutSet(
+          id: fakeId++,
+          workoutLogId: 0,
+          exerciseName: ex.name,
+          reps: s.reps,
+          weightKg: s.weight,
+        ));
+      }
+    }
+    final muscleData = await MuscleActivationService.instance.computeForSession(syntheticSets);
+    if (!mounted) return;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -611,6 +630,14 @@ class _GymScreenState extends State<GymScreen> with TickerProviderStateMixin {
                 wide: true,
               ),
               const SizedBox(height: 16),
+              // Muscle heatmap
+              if (muscleData.hasData)
+                MuscleHeatmapWidget(
+                  activationData: muscleData,
+                  height: 200,
+                  showTitle: true,
+                ),
+              if (muscleData.hasData) const SizedBox(height: 16),
               // Exercise breakdown
               if (summary.exercises.isNotEmpty) ...[
                 Align(
@@ -678,6 +705,10 @@ class _GymScreenState extends State<GymScreen> with TickerProviderStateMixin {
     final sets = await _svc.getSetsForWorkout(log.id);
     if (!mounted) return;
 
+    // Compute muscle activation data for this session
+    final muscleData = await MuscleActivationService.instance.computeForSession(sets);
+    if (!mounted) return;
+
     // Group sets by exercise name
     final Map<String, List<WorkoutSet>> grouped = {};
     for (final s in sets) {
@@ -732,6 +763,17 @@ class _GymScreenState extends State<GymScreen> with TickerProviderStateMixin {
               ),
             ),
             const SizedBox(height: 16),
+            // Muscle heatmap
+            if (muscleData.hasData)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: MuscleHeatmapWidget(
+                  activationData: muscleData,
+                  height: 220,
+                  showTitle: true,
+                ),
+              ),
+            if (muscleData.hasData) const SizedBox(height: 16),
             // Exercise list
             if (grouped.isEmpty)
               const Padding(

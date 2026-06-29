@@ -7,10 +7,13 @@ import '../../shared/widgets/calorie_ring.dart';
 import 'dashboard_dummy.dart';
 import 'dart:io';
 import '../../data/database.dart';
+import '../../data/muscle_activation_service.dart';
+import '../../data/muscle_data.dart';
 import '../weather/weather_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../profile/profile_provider.dart';
 import '../../widgets/profile_avatar.dart';
+import '../../widgets/muscle_heatmap_widget.dart';
 import '../../data/sync_service.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -225,6 +228,25 @@ class DashboardScreen extends ConsumerWidget {
                     // Calorie Ring + Pill Stats
                     _buildCalorieSection(context, summary),
                     const SizedBox(height: 28),
+
+                    // Weekly Muscle Heatmap
+                    FutureBuilder<MuscleActivationData>(
+                      future: MuscleActivationService.instance.computeWeekly(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData && snapshot.data!.hasData) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 28),
+                            child: MuscleHeatmapWidget(
+                              activationData: snapshot.data!,
+                              height: 240,
+                              showTitle: true,
+                              showLegend: true,
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
 
                     // Activity
                     _buildSectionHeader(context, 'Activity', 'View All', Icons.chevron_right, onTap: () {
