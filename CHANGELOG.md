@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+- **Gym Feature**: Added muscle activation data layer for body heatmap visualization — `MuscleGroup` enum defining all 17 muscle groups with front/back body side mapping.
+- **Gym Feature**: Created `MuscleActivationService` singleton that cross-references workout sets against the local `ExerciseDictionary` to compute which muscles were activated, at what intensity (none/low/moderate/high), and whether primary or secondary target.
+- **Gym Feature**: Supports per-session heatmap, 7-day weekly aggregation, and custom date range queries for muscle activation data.
+- **Documentation**: Added implementation plan (`docs/muscle_heatmap_plan.md`) for the muscle heatmap body map feature.
+
 ### Changed
 - **UI/UX**: Removed the debug sync log snackbar notification that appeared on the Dashboard screen immediately after login to improve user experience.
 - **Gym Feature**: Overhauled the Gym screen to match the Outdoor Activity design language. Replaced monolithic state with `GymService` singleton.
