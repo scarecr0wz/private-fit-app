@@ -9,6 +9,8 @@
 ### Fixed
 - **Security**: Fixed CRIT-01 by removing hardcoded credentials from `docker-compose.yml` and routing them through a git-ignored `.env` file using Docker environment variable substitution.
 - **Security**: Fixed CRIT-02 by introducing a centralized configuration file at `src/lib/config.ts` to enforce `JWT_SECRET` initialization at server startup, preventing fallback to insecure default credentials.
+- **Security**: Fixed CRIT-03 by implementing `.htaccess` rules in the root and API directories to block direct web access to `.env` files and directory listings under XAMPP (Apache).
+
 
 
 

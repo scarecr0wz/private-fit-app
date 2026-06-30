@@ -1,0 +1,13 @@
+# Block direct access to environment files and other sensitive configuration files
+<FilesMatch "^\.env.*$">
+    <IfModule authz_core_module>
+        Require all denied
+    </IfModule>
+    <IfModule !authz_core_module>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Block access to git config and lock files if any
+RedirectMatch 404 /\.(git|gitignore|gitattributes|env|env\.example)

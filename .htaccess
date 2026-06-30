@@ -1,0 +1,17 @@
+# Prevent directory listing
+Options -Indexes
+
+# Block direct access to env files and sensitive directories
+<FilesMatch "^\.env.*$">
+    <IfModule authz_core_module>
+        Require all denied
+    </IfModule>
+    <IfModule !authz_core_module>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Return 404 for git, environment, and docker configurations via Apache
+RedirectMatch 404 /\.(git|gitignore|gitattributes|env|env\.example|env\.production)$
+RedirectMatch 404 /(docker-compose\.yml|Dockerfile|package\.json|package-lock\.json|tsconfig\.json)$

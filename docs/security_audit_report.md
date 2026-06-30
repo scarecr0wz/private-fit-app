@@ -64,20 +64,25 @@ Dibuat file konfigurasi terpusat di `src/lib/config.ts` yang memvalidasi keberad
 
 ---
 
-### [CRIT-03] .env File Berisi DB Password di VCS
-**File:** [`.env` L8](file:///C:/xampp/htdocs/fit-app/fitapp-api/.env#L8)
+### [CRIT-03] .env File Berisi DB Password di VCS — ✅ FIXED
+**File:** [`.htaccess`](file:///C:/xampp/htdocs/fit-app/.htaccess) dan [`fitapp-api/.htaccess`](file:///C:/xampp/htdocs/fit-app/fitapp-api/.htaccess)
 
+```apache
+# Prevent directory listing
+Options -Indexes
+
+# Block direct access to env files
+<FilesMatch "^\.env.*$">
+    Require all denied
+</FilesMatch>
+
+# Return 404 for git, environment, and docker configurations via Apache
+RedirectMatch 404 /\.(git|gitignore|gitattributes|env|env\.example|env\.production)$
+RedirectMatch 404 /(docker-compose\.yml|Dockerfile|package\.json|package-lock\.json|tsconfig\.json)$
 ```
-DATABASE_URL="postgresql://postgres:Nasigoreng123%40@db:5432/mydb?schema=public"
-```
 
-**Problem:**  
-Meskipun `.env` ada di `.gitignore`, file `.env` ini **ada di dalam direktori htdocs** (web root XAMPP). Ini berarti:
-1. File ini bisa **diakses via HTTP** di `http://localhost/.env` jika web server salah konfigurasi (XAMPP default kadang serve semua file)
-2. Terekspos ke siapapun yang punya akses ke filesystem Windows lokal
-
-> [!CAUTION]
-> Jika XAMPP serving directory `C:\xampp\htdocs\fit-app\fitapp-api\` maka attacker bisa akses `http://yourserver/fit-app/fitapp-api/.env` secara langsung dan dapat password database!
+**Status Perbaikan:**
+Meskipun file `.env` sudah masuk `.gitignore`, lokasinya di dalam direktori `htdocs` (web root XAMPP) berisiko terekspos langsung via browser (HTTP). Kami telah menambahkan file `.htaccess` baik di root project maupun di subdirektori `fitapp-api/` untuk memblokir direktori listing (`Options -Indexes`), mengamankan akses ke seluruh file `.env` (`Require all denied`), serta melempar HTTP 404 jika ada request ke git config, docker files, package configurations, atau environment files.
 
 ---
 
