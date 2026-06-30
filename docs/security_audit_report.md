@@ -48,23 +48,19 @@ Semua kredensial hardcoded di `docker-compose.yml` telah diganti menggunakan var
 
 ---
 
-### [CRIT-02] JWT_SECRET Fallback ke Weak Default Key
-**File:** [`middleware/auth.ts` L4](file:///C:/xampp/htdocs/fit-app/fitapp-api/src/middleware/auth.ts#L4)  
-**File:** [`routes/auth.ts` L8](file:///C:/xampp/htdocs/fit-app/fitapp-api/src/routes/auth.ts#L8)
+### [CRIT-02] JWT_SECRET Fallback ke Weak Default Key — ✅ FIXED
+**File:** [`src/lib/config.ts`](file:///C:/xampp/htdocs/fit-app/fitapp-api/src/lib/config.ts)
 
 ```ts
-const JWT_SECRET = process.env.JWT_SECRET ?? 'super-secret-jwt-key-ganti-di-production'
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable must be set before starting the server')
+}
+
+export const JWT_SECRET = process.env.JWT_SECRET
 ```
 
-**Problem:**  
-Jika environment variable `JWT_SECRET` **tidak di-set**, sistem fallback ke string yang diketahui publik. Ini pattern yang sangat berbahaya:
-- Jika server production lupa set `JWT_SECRET`, attacker yang tahu fallback ini bisa forge token
-- String `'super-secret-jwt-key-ganti-di-production'` adalah default yang **mudah ditebak** dan mungkin diindeks di search engine
-
-**Fix (tidak diimplementasi):** Lempar error saat startup jika `JWT_SECRET` tidak di-set:
-```ts
-if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET must be set")
-```
+**Status Perbaikan:**
+Dibuat file konfigurasi terpusat di `src/lib/config.ts` yang memvalidasi keberadaan `JWT_SECRET` pada saat *startup* aplikasi. Jika variabel lingkungan tersebut tidak dikonfigurasi, server akan langsung berhenti (*crash*) dengan pesan error yang jelas dan aman daripada menggunakan fallback *weak default key* yang berbahaya. Duplikasi pembacaan `process.env.JWT_SECRET` di routes dan middleware telah dihapus dan diganti dengan import dari file konfigurasi ini.
 
 ---
 

@@ -4,8 +4,7 @@ import { z } from 'zod'
 import { sign } from 'hono/jwt'
 import { prisma } from '../lib/db'
 import bcrypt from 'bcryptjs'
-
-const JWT_SECRET = process.env.JWT_SECRET ?? 'super-secret-jwt-key-ganti-di-production'
+import { JWT_SECRET } from '../lib/config'
 
 export const authRoutes = new Hono()
 

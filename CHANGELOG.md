@@ -8,6 +8,8 @@
 
 ### Fixed
 - **Security**: Fixed CRIT-01 by removing hardcoded credentials from `docker-compose.yml` and routing them through a git-ignored `.env` file using Docker environment variable substitution.
+- **Security**: Fixed CRIT-02 by introducing a centralized configuration file at `src/lib/config.ts` to enforce `JWT_SECRET` initialization at server startup, preventing fallback to insecure default credentials.
+
 
 
 - **Gym UI**: Added a confirmation dialog with a workout session naming input when finishing a workout.

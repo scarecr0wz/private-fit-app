@@ -1,7 +1,6 @@
 import { createMiddleware } from 'hono/factory'
 import { verify } from 'hono/jwt'
-
-const JWT_SECRET = process.env.JWT_SECRET ?? 'super-secret-jwt-key-ganti-di-production'
+import { JWT_SECRET } from '../lib/config'
 
 export const authMiddleware = createMiddleware(async (c, next) => {
   const header = c.req.header('Authorization')
