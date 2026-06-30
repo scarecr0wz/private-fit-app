@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -298,6 +299,16 @@ class ActivityDetailScreen extends StatelessWidget {
                     'Kilometer',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: AppColors.onSurfaceVariant,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${DateFormat('EEE, dd MMM yyyy').format(activity.date)} • '
+                    '${DateFormat('HH:mm').format(activity.date.subtract(Duration(seconds: activity.durationSeconds)))} - '
+                    '${DateFormat('HH:mm').format(activity.date)}',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w500,
                         ),
                   ),
                   const SizedBox(height: 24),

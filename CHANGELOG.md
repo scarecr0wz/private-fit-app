@@ -3,6 +3,12 @@
 ## [Unreleased]
 
 ### Added
+- **Gym UI**: Added a confirmation dialog with a workout session naming input when finishing a workout.
+- **Gym UI**: Prefilled the workout name input dynamically based on the current time of day (*Morning Workout*, *Afternoon Workout*, etc.).
+- **Gym UI**: Added start time, end time, and duration formatted details (`HH:mm - HH:mm (X min)`) to the Workout History list cards and Session Details sheet.
+- **Stats UI**: Added start time, end time, and duration formatted details (`HH:mm - HH:mm (X min)`) to the combined Activity History list cards.
+- **Activity UI**: Added formatted date and start/end time range display in the Activity Detail screen.
+- **Activity Feature**: Implemented dynamic time-based baseline minimum calorie burn calculation (10 kcal/min for running, 7 kcal/min for cycling) to guarantee realistic calories are logged even when static or GPS location is fixed.
 - **Gym Feature**: Added muscle activation data layer for body heatmap visualization — `MuscleGroup` enum defining all 17 muscle groups with front/back body side mapping.
 - **Gym Feature**: Created `MuscleActivationService` singleton that cross-references workout sets against the local `ExerciseDictionary` to compute which muscles were activated, at what intensity (none/low/moderate/high), and whether primary or secondary target.
 - **Gym Feature**: Supports per-session heatmap, 7-day weekly aggregation, and custom date range queries for muscle activation data.
@@ -10,10 +16,10 @@
 - **Gym UI**: Built `MuscleHeatmapWidget` using `flutter_body_part_selector` package to render interactive SVG body map with front/back views and color-coded muscle intensity highlighting.
 - **Gym UI**: Muscle heatmap now displayed in the Workout Summary dialog after finishing a gym session, showing which muscle groups were targeted.
 - **Gym UI**: Muscle heatmap now displayed in the Session History detail bottom sheet for each past workout session.
-- **Dashboard**: Added a "Weekly Muscle Heatmap" card showing aggregated muscle activation from the last 7 days of gym workouts.
 - **Dependencies**: Added `flutter_body_part_selector: ^1.2.1` for SVG body diagram rendering.
 
 ### Changed
+- **Dashboard UI**: Removed the Weekly Muscle Heatmap section and its unused imports from the Homepage to streamline the dashboard layout.
 - **UI/UX**: Removed the debug sync log snackbar notification that appeared on the Dashboard screen immediately after login to improve user experience.
 - **Gym Feature**: Overhauled the Gym screen to match the Outdoor Activity design language. Replaced monolithic state with `GymService` singleton.
 - **Gym UI**: Added a 5-second TTS voice countdown overlay when starting a gym workout, identical to the Outdoor Activity flow.

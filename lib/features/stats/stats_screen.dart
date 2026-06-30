@@ -192,6 +192,20 @@ class _StatsScreenState extends State<StatsScreen> {
                                       String label = a['label'];
                                       String detail = a['detail'];
 
+                                      final endTime = a['date'] as DateTime;
+                                      DateTime startTime;
+                                      int durationMin;
+                                      if (type == 'gym') {
+                                        final rawLog = a['raw'] as WorkoutLog;
+                                        durationMin = rawLog.durationMinutes;
+                                        startTime = endTime.subtract(Duration(minutes: durationMin));
+                                      } else {
+                                        final rawLog = a['raw'] as ActivityLog;
+                                        durationMin = rawLog.durationSeconds ~/ 60;
+                                        startTime = endTime.subtract(Duration(seconds: rawLog.durationSeconds));
+                                      }
+                                      final timeRangeStr = '${DateFormat('HH:mm').format(startTime)} - ${DateFormat('HH:mm').format(endTime)}';
+
                                       return Padding(
                                         padding: const EdgeInsets.only(bottom: 12.0),
                                         child: Dismissible(
@@ -281,7 +295,7 @@ class _StatsScreenState extends State<StatsScreen> {
                                                               ),
                                                         ),
                                                         Text(
-                                                          DateFormat('dd MMM yyyy, HH:mm').format(a['date']),
+                                                          '${DateFormat('dd MMM yyyy').format(endTime)}, $timeRangeStr ($durationMin min)',
                                                           style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                                                 color: AppColors.primary,
                                                               ),

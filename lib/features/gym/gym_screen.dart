@@ -552,10 +552,94 @@ class _GymScreenState extends State<GymScreen> with TickerProviderStateMixin {
     );
   }
 
+  String _getDefaultWorkoutName() {
+    final hour = DateTime.now().hour;
+    if (hour >= 5 && hour < 12) {
+      return 'Morning Workout';
+    } else if (hour >= 12 && hour < 17) {
+      return 'Afternoon Workout';
+    } else if (hour >= 17 && hour < 21) {
+      return 'Evening Workout';
+    } else {
+      return 'Night Workout';
+    }
+  }
+
   Future<void> _handleFinishWorkout() async {
-    final summary = await _svc.finishWorkout();
-    if (summary != null && mounted) {
-      _showWorkoutSummary(summary);
+    final defaultName = _getDefaultWorkoutName();
+    final nameController = TextEditingController(text: defaultName);
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A2A),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+        title: const Row(
+          children: [
+            Text('🏁 ', style: TextStyle(fontSize: 24)),
+            Text(
+              'Finish Workout',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Give your workout session a name:',
+              style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: nameController,
+              autofocus: true,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Workout Name',
+                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+                filled: true,
+                fillColor: Colors.white.withValues(alpha: 0.05),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.onSurfaceVariant)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.onPrimary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+            child: const Text('Finish', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final summary = await _svc.finishWorkout(workoutName: nameController.text);
+      if (summary != null && mounted) {
+        _showWorkoutSummary(summary);
+      }
     }
   }
 
@@ -715,6 +799,10 @@ class _GymScreenState extends State<GymScreen> with TickerProviderStateMixin {
       grouped.putIfAbsent(s.exerciseName, () => []).add(s);
     }
 
+    final endTime = log.date;
+    final startTime = endTime.subtract(Duration(minutes: log.durationMinutes));
+    final timeStr = '${DateFormat('HH:mm').format(startTime)} - ${DateFormat('HH:mm').format(endTime)}';
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -747,7 +835,7 @@ class _GymScreenState extends State<GymScreen> with TickerProviderStateMixin {
             ),
             const SizedBox(height: 4),
             Text(
-              DateFormat('EEE, dd MMM yyyy • HH:mm').format(log.date),
+              '${DateFormat('EEE, dd MMM yyyy').format(log.date)} • $timeStr (${log.durationMinutes} min)',
               style: TextStyle(color: AppColors.onSurfaceVariant.withValues(alpha: 0.7), fontSize: 13),
             ),
             const SizedBox(height: 16),
@@ -980,6 +1068,10 @@ class _WorkoutHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final endTime = log.date;
+    final startTime = endTime.subtract(Duration(minutes: log.durationMinutes));
+    final timeStr = '${DateFormat('HH:mm').format(startTime)} - ${DateFormat('HH:mm').format(endTime)}';
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -1021,7 +1113,7 @@ class _WorkoutHistoryCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    DateFormat('EEE, dd MMM yyyy • HH:mm').format(log.date),
+                    '${DateFormat('EEE, dd MMM yyyy').format(log.date)} • $timeStr (${log.durationMinutes} min)',
                     style: TextStyle(color: AppColors.onSurfaceVariant.withValues(alpha: 0.7), fontSize: 12),
                   ),
                 ],

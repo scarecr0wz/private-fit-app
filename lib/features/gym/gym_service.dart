@@ -249,7 +249,20 @@ class GymService extends ChangeNotifier {
   }
 
   // ─── Finish Workout & Save ────────────────────────────────────────────────
-  Future<WorkoutSummaryData?> finishWorkout() async {
+  String _getDefaultWorkoutName() {
+    final hour = DateTime.now().hour;
+    if (hour >= 5 && hour < 12) {
+      return 'Morning Workout';
+    } else if (hour >= 12 && hour < 17) {
+      return 'Afternoon Workout';
+    } else if (hour >= 17 && hour < 21) {
+      return 'Evening Workout';
+    } else {
+      return 'Night Workout';
+    }
+  }
+
+  Future<WorkoutSummaryData?> finishWorkout({String? workoutName}) async {
     _timer?.cancel();
     _timer = null;
     _restTimer?.cancel();
@@ -309,10 +322,14 @@ class GymService extends ChangeNotifier {
       }
     }
 
+    final finalName = (workoutName != null && workoutName.trim().isNotEmpty)
+        ? workoutName.trim()
+        : _getDefaultWorkoutName();
+
     await db.transaction(() async {
       final logId = await db.into(db.workoutLogs).insert(WorkoutLogsCompanion.insert(
         date: now,
-        templateName: 'Custom Workout',
+        templateName: finalName,
         durationMinutes: durationMinutes,
         totalVolumeKg: totalVolume,
         caloriesBurned: drift.Value(totalCaloriesBurned),
@@ -336,7 +353,7 @@ class GymService extends ChangeNotifier {
       final workoutLog = WorkoutLog(
         id: logId,
         date: now,
-        templateName: 'Custom Workout',
+        templateName: finalName,
         durationMinutes: durationMinutes,
         totalVolumeKg: totalVolume,
         caloriesBurned: totalCaloriesBurned,

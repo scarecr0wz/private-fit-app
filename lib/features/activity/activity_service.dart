@@ -160,6 +160,7 @@ class ActivityService extends ChangeNotifier {
       // The duration getter automatically calculates the current duration 
       // based on _lastStartTime, so we just need to notify listeners to update UI.
       _recalcSpeed();
+      _updateCalories();
       notifyListeners();
     });
 
@@ -212,10 +213,7 @@ class ActivityService extends ChangeNotifier {
         );
         distanceKm += distM / 1000.0;
 
-        // Hitung kalori — running: ~60 kcal/km, cycling: ~30 kcal/km
-        calories = activityType == OutdoorActivityType.run
-            ? (distanceKm * 60).round()
-            : (distanceKm * 30).round();
+        _updateCalories();
 
         final currentKm = distanceKm.floor();
         if (currentKm > _lastAnnouncedKm) {
@@ -266,6 +264,15 @@ class ActivityService extends ChangeNotifier {
       _recalcSpeed();
       notifyListeners();
     });
+  }
+
+  void _updateCalories() {
+    final double durationMinutes = duration.inSeconds / 60.0;
+    final double baseCalories = durationMinutes * (activityType == OutdoorActivityType.run ? 10.0 : 7.0);
+    final double distanceCalories = activityType == OutdoorActivityType.run
+        ? (distanceKm * 60.0)
+        : (distanceKm * 30.0);
+    calories = (distanceCalories > baseCalories ? distanceCalories : baseCalories).round();
   }
 
   void _recalcSpeed() {
