@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.14.1] - 2026-06-30
 
 ### Added
 - **Gym UI**: Added a confirmation dialog with a workout session naming input when finishing a workout.
