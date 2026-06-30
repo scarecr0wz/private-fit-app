@@ -3,6 +3,13 @@
 ## [1.14.1] - 2026-06-30
 
 ### Added
+- **Security**: Performed a comprehensive security penetration testing and code review, generating a detailed report at `docs/security_audit_report.md` outlining vulnerabilities and fix prioritizations.
+- **Security**: Added `.env.example` template file configuration for the backend system.
+
+### Fixed
+- **Security**: Fixed CRIT-01 by removing hardcoded credentials from `docker-compose.yml` and routing them through a git-ignored `.env` file using Docker environment variable substitution.
+
+
 - **Gym UI**: Added a confirmation dialog with a workout session naming input when finishing a workout.
 - **Gym UI**: Prefilled the workout name input dynamically based on the current time of day (*Morning Workout*, *Afternoon Workout*, etc.).
 - **Gym UI**: Added start time, end time, and duration formatted details (`HH:mm - HH:mm (X min)`) to the Workout History list cards and Session Details sheet.
